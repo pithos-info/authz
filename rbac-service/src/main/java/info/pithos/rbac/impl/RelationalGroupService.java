@@ -1,5 +1,6 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.relational.ProtoBufStatement;
 import info.pithos.data.relational.RelationalClient;
 import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
@@ -14,31 +15,34 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalGroupService extends AbstractRbacService implements GroupService {
 
+    private static final ProtoBufStatement STMT =
+        ProtoBufStatement.of("groups", Rbac.Group.getDefaultInstance(), new String[]{"deleted"});
+
     public RelationalGroupService(RelationalClient relationalClient) {
         super(relationalClient);
     }
 
     @Override
     public CompletableFuture<Rbac.Group> create(RequestContext rc, String name) {
-        return relationalClient.query(rc,
-            "INSERT INTO groups (\"enterpriseId\", name) VALUES (?, ?) RETURNING id, \"enterpriseId\", name, \"utcCreatedAt\", deleted",
-            authEnterpriseId(rc), name)
+        Rbac.Group group = Rbac.Group.newBuilder()
+            .setId(UUID.randomUUID().toString())
+            .setEnterpriseId(authEnterpriseId(rc).toString())
+            .setName(name)
+            .setUtcCreatedAt(System.currentTimeMillis())
+            .build();
+        return relationalClient.query(rc, STMT.insert(group))
             .thenApply(rows -> toGroup(rows.get(0)));
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.Group>> get(RequestContext rc, String id) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", name, \"utcCreatedAt\", deleted FROM groups WHERE id = ?",
-            UUID.fromString(id))
+        return relationalClient.query(rc, STMT.selectById(id))
             .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toGroup(rows.get(0))));
     }
 
     @Override
     public CompletableFuture<Rbac.Group> update(RequestContext rc, Rbac.Group group) {
-        return relationalClient.query(rc,
-            "UPDATE groups SET name = ? WHERE id = ? RETURNING id, \"enterpriseId\", name, \"utcCreatedAt\", deleted",
-            group.getName(), UUID.fromString(group.getId()))
+        return relationalClient.query(rc, STMT.update(group))
             .thenApply(rows -> {
                 if (rows.isEmpty()) throw new IllegalArgumentException("Group not found: " + group.getId());
                 return toGroup(rows.get(0));
@@ -47,16 +51,14 @@ public class RelationalGroupService extends AbstractRbacService implements Group
 
     @Override
     public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return relationalClient.execute(rc,
-            "UPDATE groups SET deleted = true WHERE id = ?", UUID.fromString(id))
-            .thenAccept(n -> {});
+        return relationalClient.execute(rc, STMT.softDelete(id)).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.Group>> list(RequestContext rc) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", name, \"utcCreatedAt\", deleted FROM groups WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name",
-            authEnterpriseId(rc))
+        String sql = "SELECT " + STMT.columnList()
+            + " FROM \"groups\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
+        return relationalClient.query(rc, sql, authEnterpriseId(rc))
             .thenApply(rows -> rows.stream().map(RelationalGroupService::toGroup).toList());
     }
 

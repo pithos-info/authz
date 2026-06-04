@@ -1,5 +1,6 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.relational.ProtoBufStatement;
 import info.pithos.data.relational.RelationalClient;
 import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
@@ -7,13 +8,14 @@ import info.pithos.rbac.ApiKeyService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.http.RequestContextOuterClass.RequestContext;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RelationalApiKeyService extends AbstractRbacService implements ApiKeyService {
+
+    private static final ProtoBufStatement STMT =
+        ProtoBufStatement.of("apiKeys", Rbac.ApiKey.getDefaultInstance());
 
     public RelationalApiKeyService(RelationalClient relationalClient) {
         super(relationalClient);
@@ -21,42 +23,26 @@ public class RelationalApiKeyService extends AbstractRbacService implements ApiK
 
     @Override
     public CompletableFuture<Rbac.ApiKey> create(RequestContext rc, Rbac.ApiKey apiKey) {
-        return relationalClient.query(rc,
-            """
-            INSERT INTO "apiKeys" ("enterpriseId", "userId", name, "keyHash", "keyPrefix", permissions, "expiresAt")
-            VALUES (?, ?, ?, ?, ?, ?::text[], ?)
-            RETURNING id, "enterpriseId", "userId", name, "keyHash", "keyPrefix", permissions, "expiresAt", "lastUsedAt", "utcCreatedAt"
-            """,
-            UUID.fromString(apiKey.getEnterpriseId()),
-            UUID.fromString(apiKey.getUserId()),
-            apiKey.getName(),
-            apiKey.getKeyHash(),
-            apiKey.getKeyPrefix(),
-            pgArray(apiKey.getPermissionsList()),
-            apiKey.getExpiresAt() > 0 ? new Timestamp(apiKey.getExpiresAt()) : null)
+        return relationalClient.query(rc, STMT.insert(apiKey))
             .thenApply(rows -> toApiKey(rows.get(0)));
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.ApiKey>> get(RequestContext rc, String id) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", \"userId\", name, \"keyHash\", \"keyPrefix\", permissions, \"expiresAt\", \"lastUsedAt\", \"utcCreatedAt\" FROM \"apiKeys\" WHERE id = ?",
-            UUID.fromString(id))
+        return relationalClient.query(rc, STMT.selectById(id))
             .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toApiKey(rows.get(0))));
     }
 
     @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String id) {
-        return relationalClient.execute(rc,
-            "DELETE FROM \"apiKeys\" WHERE id = ?", UUID.fromString(id))
-            .thenAccept(n -> {});
+        return relationalClient.execute(rc, STMT.delete(id)).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.ApiKey>> list(RequestContext rc) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", \"userId\", name, \"keyHash\", \"keyPrefix\", permissions, \"expiresAt\", \"lastUsedAt\", \"utcCreatedAt\" FROM \"apiKeys\" WHERE \"enterpriseId\" = ? AND \"userId\" = ? ORDER BY \"utcCreatedAt\"",
-            authEnterpriseId(rc), authUserId(rc))
+        String sql = "SELECT " + STMT.columnList()
+            + " FROM \"apiKeys\" WHERE \"enterpriseId\" = ? AND \"userId\" = ? ORDER BY \"utcCreatedAt\"";
+        return relationalClient.query(rc, sql, authEnterpriseId(rc), authUserId(rc))
             .thenApply(rows -> rows.stream().map(RelationalApiKeyService::toApiKey).toList());
     }
 

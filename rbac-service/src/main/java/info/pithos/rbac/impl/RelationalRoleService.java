@@ -1,5 +1,6 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.relational.ProtoBufStatement;
 import info.pithos.data.relational.RelationalClient;
 import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
@@ -14,31 +15,34 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalRoleService extends AbstractRbacService implements RoleService {
 
+    private static final ProtoBufStatement STMT =
+        ProtoBufStatement.of("roles", Rbac.Role.getDefaultInstance(), new String[]{"deleted"});
+
     public RelationalRoleService(RelationalClient relationalClient) {
         super(relationalClient);
     }
 
     @Override
     public CompletableFuture<Rbac.Role> create(RequestContext rc, String name) {
-        return relationalClient.query(rc,
-            "INSERT INTO roles (\"enterpriseId\", name) VALUES (?, ?) RETURNING id, \"enterpriseId\", name, \"utcCreatedAt\", deleted",
-            authEnterpriseId(rc), name)
+        Rbac.Role role = Rbac.Role.newBuilder()
+            .setId(UUID.randomUUID().toString())
+            .setEnterpriseId(authEnterpriseId(rc).toString())
+            .setName(name)
+            .setUtcCreatedAt(System.currentTimeMillis())
+            .build();
+        return relationalClient.query(rc, STMT.insert(role))
             .thenApply(rows -> toRole(rows.get(0)));
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.Role>> get(RequestContext rc, String id) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", name, \"utcCreatedAt\", deleted FROM roles WHERE id = ?",
-            UUID.fromString(id))
+        return relationalClient.query(rc, STMT.selectById(id))
             .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toRole(rows.get(0))));
     }
 
     @Override
     public CompletableFuture<Rbac.Role> update(RequestContext rc, Rbac.Role role) {
-        return relationalClient.query(rc,
-            "UPDATE roles SET name = ? WHERE id = ? RETURNING id, \"enterpriseId\", name, \"utcCreatedAt\", deleted",
-            role.getName(), UUID.fromString(role.getId()))
+        return relationalClient.query(rc, STMT.update(role))
             .thenApply(rows -> {
                 if (rows.isEmpty()) throw new IllegalArgumentException("Role not found: " + role.getId());
                 return toRole(rows.get(0));
@@ -47,16 +51,14 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
 
     @Override
     public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return relationalClient.execute(rc,
-            "UPDATE roles SET deleted = true WHERE id = ?", UUID.fromString(id))
-            .thenAccept(n -> {});
+        return relationalClient.execute(rc, STMT.softDelete(id)).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.Role>> list(RequestContext rc) {
-        return relationalClient.query(rc,
-            "SELECT id, \"enterpriseId\", name, \"utcCreatedAt\", deleted FROM roles WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name",
-            authEnterpriseId(rc))
+        String sql = "SELECT " + STMT.columnList()
+            + " FROM \"roles\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
+        return relationalClient.query(rc, sql, authEnterpriseId(rc))
             .thenApply(rows -> rows.stream().map(RelationalRoleService::toRole).toList());
     }
 
