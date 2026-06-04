@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalGroupService extends AbstractRbacService implements GroupService {
 
-    private static final ProtoBufStatement STMT =
+    private static final ProtoBufStatement<Rbac.Group> STMT =
         ProtoBufStatement.of("groups", Rbac.Group.getDefaultInstance(), new String[]{"deleted"});
 
     public RelationalGroupService(RelationalClient relationalClient) {

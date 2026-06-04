@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalRoleService extends AbstractRbacService implements RoleService {
 
-    private static final ProtoBufStatement STMT =
+    private static final ProtoBufStatement<Rbac.Role> STMT =
         ProtoBufStatement.of("roles", Rbac.Role.getDefaultInstance(), new String[]{"deleted"});
 
     public RelationalRoleService(RelationalClient relationalClient) {

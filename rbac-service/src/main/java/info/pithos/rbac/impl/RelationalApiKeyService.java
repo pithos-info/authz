@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalApiKeyService extends AbstractRbacService implements ApiKeyService {
 
-    private static final ProtoBufStatement STMT =
+    private static final ProtoBufStatement<Rbac.ApiKey> STMT =
         ProtoBufStatement.of("apiKeys", Rbac.ApiKey.getDefaultInstance());
 
     public RelationalApiKeyService(RelationalClient relationalClient) {

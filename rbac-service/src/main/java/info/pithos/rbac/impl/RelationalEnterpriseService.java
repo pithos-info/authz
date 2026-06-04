@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalEnterpriseService extends AbstractRbacService implements EnterpriseService {
 
-    private static final ProtoBufStatement STMT =
+    private static final ProtoBufStatement<Rbac.Enterprise> STMT =
         ProtoBufStatement.of(Rbac.Enterprise.getDefaultInstance(), "deleted");
 
     public RelationalEnterpriseService(RelationalClient relationalClient) {

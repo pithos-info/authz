@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalUserService extends AbstractRbacService implements UserService {
 
-    private static final ProtoBufStatement STMT =
+    private static final ProtoBufStatement<Rbac.User> STMT =
         ProtoBufStatement.of(Rbac.User.getDefaultInstance(), "deleted");
 
     public RelationalUserService(RelationalClient relationalClient) {
