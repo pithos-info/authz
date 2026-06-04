@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package info.pithos.rbac.model;
+
+option java_package = "info.pithos.rbac.model";
+option java_outer_classname = "Rbac";
+
+// Tenant
+message Enterprise {
+  string id           = 1;
+  string slug         = 2;  // unique URL-safe identifier, e.g. "acme-corp"
+  string name         = 3;
+  string plan         = 4;  // free | pro | enterprise
+  int64  utcCreatedAt = 5;  // epoch millis
+  string domain       = 6;  // primary domain, e.g. "acme.com"
+  bool deleted        = 7;
+}
+
+// User — no password fields; authentication is delegated to the IdP
+message User {
+  string id           = 1;
+  string enterpriseId = 2;
+  string email        = 3;
+  string externalId   = 4;  // IdP subject (Google sub, Okta sub, etc.)
+  string idpProvider  = 5;  // google | okta | azure | keycloak
+  string displayName  = 6;
+  int64  lastLoginAt  = 7;  // epoch millis; 0 = never
+  int64  utcCreatedAt = 8;  // epoch millis
+  bool deleted        = 9;
+}
+
+// Named collection of users within an enterprise
+message Group {
+  string id           = 1;
+  string enterpriseId = 2;
+  string name         = 3;
+  int64  utcCreatedAt = 4;  // epoch millis
+  bool deleted        = 5;
+}
+
+// Role scoped to an enterprise; built-in or custom
+message Role {
+  string id           = 1;
+  string enterpriseId = 2;
+  string name         = 3;  // e.g. "enterpriseOwner" | "admin" | "developer" | "viewer"
+  int64  utcCreatedAt = 4;  // epoch millis
+  bool deleted        = 5;
+}
+
+// API key — scoped to a user with an explicit permission subset
+message ApiKey {
+  string          id           = 1;
+  string          enterpriseId = 2;
+  string          userId       = 3;
+  string          name         = 4;
+  string          keyHash      = 5;  // SHA-256 of the raw key
+  string          keyPrefix    = 6;  // first 12 chars for display
+  repeated string permissions  = 7;  // subset of the user's effective permissions
+  int64           expiresAt    = 8;  // epoch millis; 0 = no expiry
+  int64           lastUsedAt   = 9;  // epoch millis; 0 = never used
+  int64           utcCreatedAt = 10; // epoch millis
+}
+
+// --- Association messages (used in mutation / event payloads) ---
+
+message GroupMember {
+  string groupId = 1;
+  string userId  = 2;
+}
+
+message UserRole {
+  string userId    = 1;
+  string roleId    = 2;
+  string grantedBy = 3;  // userId of the granting principal
+}
+
+message GroupRole {
+  string groupId = 1;
+  string roleId  = 2;
+}
+
+// Permission in resource:action format, e.g. "agents:run", "agents:create"
+message RolePermission {
+  string roleId     = 1;
+  string permission = 2;
+}
