@@ -1,10 +1,10 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.RelationalClient;
+import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.RbacService;
 import info.pithos.rbac.model.Rbac;
-import info.pithos.runtime.model.protocol.http.RequestContextOuterClass.RequestContext;
+import info.pithos.runtime.model.protocol.http.Context.RequestContext;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -54,7 +54,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> addUserToGroup(RequestContext rc, String groupId, String userId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "INSERT INTO \"groupMembers\" (\"groupId\", \"userId\") VALUES (?, ?) ON CONFLICT DO NOTHING",
             UUID.fromString(groupId), UUID.fromString(userId))
             .thenAccept(n -> {});
@@ -62,7 +62,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> removeUserFromGroup(RequestContext rc, String groupId, String userId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "DELETE FROM \"groupMembers\" WHERE \"groupId\" = ? AND \"userId\" = ?",
             UUID.fromString(groupId), UUID.fromString(userId))
             .thenAccept(n -> {});
@@ -70,7 +70,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<List<Rbac.User>> getGroupMembers(RequestContext rc, String groupId) {
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT u.id, u."enterpriseId", u.email, u."externalId", u."idpProvider", u."displayName", u."lastLoginAt", u."utcCreatedAt", u.deleted
             FROM "user" u
@@ -83,7 +83,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<List<Rbac.Group>> getUserGroups(RequestContext rc) {
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT g.id, g."enterpriseId", g.name, g."utcCreatedAt", g.deleted
             FROM groups g
@@ -96,7 +96,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Boolean> isUserInGroup(RequestContext rc, String groupId) {
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT EXISTS (
                 SELECT 1 FROM "groupMembers" gm
@@ -113,7 +113,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> assignRoleToUser(RequestContext rc, String userId, String roleId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "INSERT INTO \"userRoles\" (\"userId\", \"roleId\", \"grantedBy\") VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
             UUID.fromString(userId), UUID.fromString(roleId), authUserId(rc))
             .thenAccept(n -> {});
@@ -121,7 +121,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> revokeRoleFromUser(RequestContext rc, String userId, String roleId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "DELETE FROM \"userRoles\" WHERE \"userId\" = ? AND \"roleId\" = ?",
             UUID.fromString(userId), UUID.fromString(roleId))
             .thenAccept(n -> {});
@@ -130,7 +130,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
     @Override
     public CompletableFuture<List<Rbac.Role>> getUserRoles(RequestContext rc) {
         UUID uid = authUserId(rc);
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT DISTINCT r.id, r."enterpriseId", r.name, r."utcCreatedAt", r.deleted
             FROM roles r
@@ -149,7 +149,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> assignRoleToGroup(RequestContext rc, String groupId, String roleId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "INSERT INTO \"groupRoles\" (\"groupId\", \"roleId\") VALUES (?, ?) ON CONFLICT DO NOTHING",
             UUID.fromString(groupId), UUID.fromString(roleId))
             .thenAccept(n -> {});
@@ -157,7 +157,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> revokeRoleFromGroup(RequestContext rc, String groupId, String roleId) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "DELETE FROM \"groupRoles\" WHERE \"groupId\" = ? AND \"roleId\" = ?",
             UUID.fromString(groupId), UUID.fromString(roleId))
             .thenAccept(n -> {});
@@ -169,7 +169,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> addPermissionToRole(RequestContext rc, String roleId, String permission) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "INSERT INTO \"rolePermissions\" (\"roleId\", permission) VALUES (?, ?) ON CONFLICT DO NOTHING",
             UUID.fromString(roleId), permission)
             .thenAccept(n -> {});
@@ -177,7 +177,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<Void> removePermissionFromRole(RequestContext rc, String roleId, String permission) {
-        return relationalClient.execute(rc,
+        return relationalClient.execute(dc(rc),
             "DELETE FROM \"rolePermissions\" WHERE \"roleId\" = ? AND permission = ?",
             UUID.fromString(roleId), permission)
             .thenAccept(n -> {});
@@ -185,7 +185,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
 
     @Override
     public CompletableFuture<List<String>> getRolePermissions(RequestContext rc, String roleId) {
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             "SELECT permission FROM \"rolePermissions\" WHERE \"roleId\" = ? ORDER BY permission",
             UUID.fromString(roleId))
             .thenApply(rows -> rows.stream().map(r -> r.getString("permission")).toList());
@@ -198,7 +198,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
     @Override
     public CompletableFuture<Boolean> hasPermission(RequestContext rc, String permission) {
         UUID uid = authUserId(rc);
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT (
                 EXISTS (
@@ -222,7 +222,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
     public CompletableFuture<Boolean> hasRole(RequestContext rc, String roleId) {
         UUID uid = authUserId(rc);
         UUID rid = UUID.fromString(roleId);
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT (
                 EXISTS (
@@ -241,7 +241,7 @@ public class RelationalRbacService extends AbstractRbacService implements RbacSe
     @Override
     public CompletableFuture<List<String>> getUserPermissions(RequestContext rc) {
         UUID uid = authUserId(rc);
-        return relationalClient.query(rc,
+        return relationalClient.query(dc(rc),
             """
             SELECT DISTINCT rp.permission
             FROM "rolePermissions" rp

@@ -1,6 +1,6 @@
 package info.pithos.rbac.cloudsql;
 
-import info.pithos.data.relational.RelationalClient;
+import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.cloudsql.CloudSqlClient;
 import info.pithos.rbac.RbacServiceModule;
 import info.pithos.rbac.impl.RelationalApiKeyService;

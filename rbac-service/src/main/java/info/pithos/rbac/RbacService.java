@@ -2,7 +2,7 @@ package info.pithos.rbac;
 
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.core.context.ServiceLifeCycle;
-import info.pithos.runtime.model.protocol.http.RequestContextOuterClass.RequestContext;
+import info.pithos.runtime.model.protocol.http.Context.RequestContext;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

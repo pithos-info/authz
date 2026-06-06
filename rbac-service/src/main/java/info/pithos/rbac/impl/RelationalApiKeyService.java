@@ -1,12 +1,12 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.ProtoBufStatement;
-import info.pithos.data.relational.RelationalClient;
+import info.pithos.data.relational.client.ProtoBufStatement;
+import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.rbac.model.Rbac;
-import info.pithos.runtime.model.protocol.http.RequestContextOuterClass.RequestContext;
+import info.pithos.runtime.model.protocol.http.Context.RequestContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,26 +23,26 @@ public class RelationalApiKeyService extends AbstractRbacService implements ApiK
 
     @Override
     public CompletableFuture<Rbac.ApiKey> create(RequestContext rc, Rbac.ApiKey apiKey) {
-        return relationalClient.query(rc, STMT.insert(apiKey))
+        return relationalClient.query(dc(rc),STMT.insert(apiKey))
             .thenApply(rows -> toApiKey(rows.get(0)));
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.ApiKey>> get(RequestContext rc, String id) {
-        return relationalClient.query(rc, STMT.selectById(id))
+        return relationalClient.query(dc(rc),STMT.selectById(id))
             .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toApiKey(rows.get(0))));
     }
 
     @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String id) {
-        return relationalClient.execute(rc, STMT.delete(id)).thenAccept(n -> {});
+        return relationalClient.execute(dc(rc),STMT.delete(id)).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.ApiKey>> list(RequestContext rc) {
         String sql = "SELECT " + STMT.columnList()
             + " FROM \"apiKeys\" WHERE \"enterpriseId\" = ? AND \"userId\" = ? ORDER BY \"utcCreatedAt\"";
-        return relationalClient.query(rc, sql, authEnterpriseId(rc), authUserId(rc))
+        return relationalClient.query(dc(rc),sql, authEnterpriseId(rc), authUserId(rc))
             .thenApply(rows -> rows.stream().map(RelationalApiKeyService::toApiKey).toList());
     }
 

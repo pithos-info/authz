@@ -1,7 +1,8 @@
 package info.pithos.rbac;
 
-import info.pithos.data.relational.RelationalClient;
-import info.pithos.runtime.model.protocol.http.RequestContextOuterClass.RequestContext;
+import info.pithos.data.relational.DataContext;
+import info.pithos.data.relational.client.RelationalClient;
+import info.pithos.runtime.model.protocol.http.Context.RequestContext;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +14,10 @@ public abstract class AbstractRbacService {
     protected AbstractRbacService(RelationalClient relationalClient) {
         if (relationalClient == null) throw new IllegalArgumentException("relationalClient must not be null");
         this.relationalClient = relationalClient;
+    }
+
+    protected static DataContext dc(RequestContext rc) {
+        return DataContext.of(rc);
     }
 
     protected static UUID authEnterpriseId(RequestContext ctx) {
