@@ -6,7 +6,7 @@ import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.model.Rbac;
-import info.pithos.runtime.model.protocol.http.Context.RequestContext;
+import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
 import java.util.Optional;

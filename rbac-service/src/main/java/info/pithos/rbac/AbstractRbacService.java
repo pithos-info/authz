@@ -2,7 +2,7 @@ package info.pithos.rbac;
 
 import info.pithos.data.relational.DataContext;
 import info.pithos.data.relational.client.RelationalClient;
-import info.pithos.runtime.model.protocol.http.Context.RequestContext;
+import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
 import java.util.UUID;
