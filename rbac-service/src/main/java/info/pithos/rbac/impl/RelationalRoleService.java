@@ -1,8 +1,8 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.client.ProtoBufStatement;
+import info.pithos.data.relational.PreparedQuery;
+import info.pithos.data.relational.client.ProtoBufRelationalClient;
 import info.pithos.data.relational.client.RelationalClient;
-import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.model.Rbac;
@@ -15,11 +15,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalRoleService extends AbstractRbacService implements RoleService {
 
-    private static final ProtoBufStatement<Rbac.Role> STMT =
-        ProtoBufStatement.of("roles", Rbac.Role.getDefaultInstance(), new String[]{"deleted"});
+    private final ProtoBufRelationalClient<Rbac.Role> store;
 
     public RelationalRoleService(RelationalClient relationalClient) {
         super(relationalClient);
+        this.store = ProtoBufRelationalClient.of(relationalClient, Rbac.Role.getDefaultInstance(), "deleted");
     }
 
     @Override
@@ -30,45 +30,45 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
             .setName(name)
             .setUtcCreatedAt(System.currentTimeMillis())
             .build();
-        return relationalClient.query(dc(rc),STMT.insert(role))
-            .thenApply(rows -> toRole(rows.get(0)));
+        return store.insert(dc(rc), role);
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.Role>> get(RequestContext rc, String id) {
-        return relationalClient.query(dc(rc),STMT.selectById(id))
-            .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toRole(rows.get(0))));
+        return store.findById(dc(rc), id).thenApply(Optional::ofNullable);
     }
 
     @Override
     public CompletableFuture<Rbac.Role> update(RequestContext rc, Rbac.Role role) {
-        return relationalClient.query(dc(rc),STMT.update(role))
-            .thenApply(rows -> {
-                if (rows.isEmpty()) throw new IllegalArgumentException("Role not found: " + role.getId());
-                return toRole(rows.get(0));
-            });
+        return store.update(dc(rc), role);
     }
 
     @Override
     public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return relationalClient.execute(dc(rc),STMT.softDelete(id)).thenAccept(n -> {});
+        return store.softDelete(dc(rc), id).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.Role>> list(RequestContext rc) {
-        String sql = "SELECT " + STMT.columnList()
-            + " FROM \"roles\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
-        return relationalClient.query(dc(rc),sql, authEnterpriseId(rc))
-            .thenApply(rows -> rows.stream().map(RelationalRoleService::toRole).toList());
+        String sql = "SELECT " + store.statement().columnList()
+            + " FROM role WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
     }
 
-    static Rbac.Role toRole(Row row) {
-        return Rbac.Role.newBuilder()
-            .setId(row.getStr("id"))
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setName(row.getString("name"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
-            .setDeleted(row.getBoolOrFalse("deleted"))
-            .build();
+    @Override
+    public CompletableFuture<List<Rbac.Role>> getUserRoles(RequestContext rc) {
+        UUID uid = authUserId(rc);
+        String sql = "SELECT DISTINCT " + store.statement().columnList()
+            + " FROM role"
+            + " WHERE id IN ("
+            + "   SELECT \"roleId\" FROM \"userRole\" WHERE \"userId\" = ?"
+            + "   UNION"
+            + "   SELECT gr.\"roleId\" FROM \"groupRole\" gr"
+            + "   JOIN \"groupMember\" gm ON gm.\"groupId\" = gr.\"groupId\""
+            + "   WHERE gm.\"userId\" = ?"
+            + " )"
+            + " AND \"enterpriseId\" = ? AND deleted = false"
+            + " ORDER BY name";
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{uid, uid, authEnterpriseId(rc)}));
     }
 }

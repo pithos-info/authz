@@ -14,6 +14,7 @@ message Enterprise {
   int64  utcCreatedAt = 5;  // epoch millis
   string domain       = 6;  // primary domain, e.g. "acme.com"
   bool deleted        = 7;
+  int64 utcModifiedAt = 8;  // epoch millis
 }
 
 // User — no password fields; authentication is delegated to the IdP
@@ -27,6 +28,7 @@ message User {
   int64  lastLoginAt  = 7;  // epoch millis; 0 = never
   int64  utcCreatedAt = 8;  // epoch millis
   bool deleted        = 9;
+  int64 utcModifiedAt = 10;  // epoch millis
 }
 
 // Named collection of users within an enterprise
@@ -36,6 +38,7 @@ message Group {
   string name         = 3;
   int64  utcCreatedAt = 4;  // epoch millis
   bool deleted        = 5;
+  int64 utcModifiedAt = 6;  // epoch millis
 }
 
 // Role scoped to an enterprise; built-in or custom
@@ -45,6 +48,7 @@ message Role {
   string name         = 3;  // e.g. "enterpriseOwner" | "admin" | "developer" | "viewer"
   int64  utcCreatedAt = 4;  // epoch millis
   bool deleted        = 5;
+  int64 utcModifiedAt = 6;  // epoch millis
 }
 
 // API key — scoped to a user with an explicit permission subset
@@ -64,23 +68,27 @@ message ApiKey {
 // --- Association messages (used in mutation / event payloads) ---
 
 message GroupMember {
-  string groupId = 1;
-  string userId  = 2;
+  string groupId      = 1;
+  string userId       = 2;
+  int64  utcCreatedAt = 3; // epoch millis
 }
 
 message UserRole {
-  string userId    = 1;
-  string roleId    = 2;
-  string grantedBy = 3;  // userId of the granting principal
+  string userId       = 1;
+  string roleId       = 2;
+  string grantedById  = 3;  // userId of the granting principal
+  int64  utcCreatedAt = 4; // epoch millis
 }
 
 message GroupRole {
-  string groupId = 1;
-  string roleId  = 2;
+  string groupId      = 1;
+  string roleId       = 2;
+  int64  utcCreatedAt = 4; // epoch millis
 }
 
 // Permission in resource:action format, e.g. "agents:run", "agents:create"
 message RolePermission {
-  string roleId     = 1;
-  string permission = 2;
+  string roleId       = 1;
+  string permission   = 2;
+  int64  utcCreatedAt = 3; // epoch millis
 }

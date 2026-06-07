@@ -1,8 +1,8 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.client.ProtoBufStatement;
+import info.pithos.data.relational.PreparedQuery;
+import info.pithos.data.relational.client.ProtoBufRelationalClient;
 import info.pithos.data.relational.client.RelationalClient;
-import info.pithos.data.relational.Row;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.EnterpriseService;
 import info.pithos.rbac.model.Rbac;
@@ -14,57 +14,37 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalEnterpriseService extends AbstractRbacService implements EnterpriseService {
 
-    private static final ProtoBufStatement<Rbac.Enterprise> STMT =
-        ProtoBufStatement.of(Rbac.Enterprise.getDefaultInstance(), "deleted");
+    private final ProtoBufRelationalClient<Rbac.Enterprise> store;
 
     public RelationalEnterpriseService(RelationalClient relationalClient) {
         super(relationalClient);
+        this.store = ProtoBufRelationalClient.of(relationalClient, Rbac.Enterprise.getDefaultInstance(), "deleted");
     }
 
     @Override
     public CompletableFuture<Rbac.Enterprise> create(RequestContext rc, Rbac.Enterprise enterprise) {
-        return relationalClient.query(dc(rc),STMT.insert(enterprise))
-            .thenApply(rows -> toEnterprise(rows.get(0)));
+        return store.insert(dc(rc), enterprise);
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.Enterprise>> get(RequestContext rc, String id) {
-        return relationalClient.query(dc(rc),STMT.selectById(id))
-            .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toEnterprise(rows.get(0))));
+        return store.findById(dc(rc), id).thenApply(Optional::ofNullable);
     }
 
     @Override
     public CompletableFuture<Rbac.Enterprise> update(RequestContext rc, Rbac.Enterprise enterprise) {
-        return relationalClient.query(dc(rc),STMT.update(enterprise))
-            .thenApply(rows -> {
-                if (rows.isEmpty()) throw new IllegalArgumentException("Enterprise not found: " + enterprise.getId());
-                return toEnterprise(rows.get(0));
-            });
+        return store.update(dc(rc), enterprise);
     }
 
     @Override
     public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return relationalClient.execute(dc(rc),STMT.softDelete(id)).thenAccept(n -> {});
+        return store.softDelete(dc(rc), id).thenAccept(n -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.Enterprise>> list(RequestContext rc) {
-        String sql = "SELECT " + STMT.columnList()
+        String sql = "SELECT " + store.statement().columnList()
             + " FROM \"enterprise\" WHERE deleted = false ORDER BY \"utcCreatedAt\"";
-        return relationalClient.query(dc(rc),sql)
-            .thenApply(rows -> rows.stream().map(this::toEnterprise).toList());
-    }
-
-    private Rbac.Enterprise toEnterprise(Row row) {
-        Rbac.Enterprise.Builder b = Rbac.Enterprise.newBuilder()
-            .setId(row.getStr("id"))
-            .setSlug(row.getString("slug"))
-            .setName(row.getString("name"))
-            .setPlan(row.getString("plan"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
-            .setDeleted(row.getBoolOrFalse("deleted"));
-        String domain = row.getString("domain");
-        if (domain != null) b.setDomain(domain);
-        return b.build();
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[0]));
     }
 }

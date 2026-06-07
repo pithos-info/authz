@@ -20,4 +20,7 @@ public interface GroupService {
 
     /** Lists non-deleted groups scoped to {@code authContext.enterpriseId}. */
     CompletableFuture<List<Rbac.Group>> list(RequestContext rc);
+
+    /** Returns non-deleted groups that {@code authContext.userId} belongs to within {@code authContext.enterpriseId}. */
+    CompletableFuture<List<Rbac.Group>> getUserGroups(RequestContext rc);
 }

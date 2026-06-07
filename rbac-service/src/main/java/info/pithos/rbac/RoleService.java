@@ -20,4 +20,7 @@ public interface RoleService {
 
     /** Lists non-deleted roles scoped to {@code authContext.enterpriseId}. */
     CompletableFuture<List<Rbac.Role>> list(RequestContext rc);
+
+    /** Returns roles held by {@code authContext.userId} directly or via group membership. */
+    CompletableFuture<List<Rbac.Role>> getUserRoles(RequestContext rc);
 }

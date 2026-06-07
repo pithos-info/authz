@@ -9,12 +9,13 @@ CREATE TABLE "enterprise" (
     plan           TEXT NOT NULL DEFAULT 'free',
     domain         TEXT,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-    "deleted"      BOOLEAN DEFAULT FALSE
+    "deleted"      BOOLEAN DEFAULT FALSE,
+    "utcModifiedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "user" (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id) ON DELETE CASCADE,
+    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
     email          TEXT NOT NULL,
     "externalId"   TEXT NOT NULL,
     "idpProvider"  TEXT NOT NULL,
@@ -22,56 +23,63 @@ CREATE TABLE "user" (
     "lastLoginAt"  TIMESTAMPTZ,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
+    "utcModifiedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE ("enterpriseId", "externalId")
 );
 
 CREATE TABLE "group" (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id) ON DELETE CASCADE,
+    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
     name           TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
+    "utcModifiedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE ("enterpriseId", name)
 );
 
 CREATE TABLE "groupMember" (
-    "groupId"      UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    "userId"       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    "groupId"      UUID NOT NULL REFERENCES groups(id),
+    "userId"       UUID NOT NULL REFERENCES users(id),
+    "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("groupId", "userId")
 );
 
 CREATE TABLE role (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id) ON DELETE CASCADE,
+    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
     name           TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
+    "utcModifiedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE ("enterpriseId", name)
 );
 
 CREATE TABLE "userRole" (
-    "userId"       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    "roleId"       UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    "grantedBy"    UUID REFERENCES users(id),
+    "userId"       UUID NOT NULL REFERENCES users(id),
+    "roleId"       UUID NOT NULL REFERENCES roles(id),
+    "grantedById"  UUID REFERENCES users(id),
+    "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("userId", "roleId")
 );
 
 CREATE TABLE "groupRole" (
-    "groupId"      UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    "roleId"       UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    "groupId"      UUID NOT NULL REFERENCES groups(id),
+    "roleId"       UUID NOT NULL REFERENCES roles(id),
+    "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("groupId", "roleId")
 );
 
 CREATE TABLE "rolePermission" (
-    "roleId"       UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    "roleId"       UUID NOT NULL REFERENCES roles(id),
     permission     TEXT NOT NULL,
+    "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("roleId", permission)
 );
 
 CREATE TABLE "apiKey" (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id) ON DELETE CASCADE,
-    "userId"       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
+    "userId"       UUID NOT NULL REFERENCES users(id),
     name           TEXT NOT NULL,
     "keyHash"      TEXT UNIQUE NOT NULL,
     "keyPrefix"    TEXT NOT NULL,
