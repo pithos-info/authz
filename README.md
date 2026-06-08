@@ -348,6 +348,25 @@ Both start the cache client synchronously in `init()` (`.join()`) before constru
 
 ---
 
+## Auto-timestamps in `ProtoBufStatement`
+
+`ProtoBufStatement` auto-populates timestamp fields at the **application layer** so that all timestamps originate from the app clock, not the database node. The indices are computed once at construction time — the per-call check is O(1).
+
+| Operation | Field | Behaviour |
+|---|---|---|
+| `insert()` | `utcCreatedAt` | Auto-set to `System.currentTimeMillis()` if unset (0) |
+| `update()` | `utcModifiedAt` | Auto-set to `System.currentTimeMillis()` if unset (0) |
+
+Both fields are **optional by field existence** — if the proto message does not declare the field (e.g. `utcModifiedAt` is absent from `Group`, `Role`, and all association tables), the index resolves to `-1` and the check is skipped silently. No caller changes are needed for those types.
+
+Callers that explicitly set either field to a non-zero value retain that value — the auto-set only fires when the field is at its proto3 default (`0`).
+
+`utcCreatedAt` is already excluded from `updateFields` by the constructor (it is written once on INSERT and never overwritten). `utcModifiedAt` is excluded from `insertFields` only if passed to `excludeFromWrite` — otherwise it participates in both INSERT and UPDATE SET.
+
+**Consequence for services:** do not call `setUtcCreatedAt(...)` or `setUtcModifiedAt(...)` manually in service create/update methods. The statement layer handles it uniformly.
+
+---
+
 ## DDL conventions
 
 - All tables use `UUID PRIMARY KEY DEFAULT gen_random_uuid()` for entity tables.
