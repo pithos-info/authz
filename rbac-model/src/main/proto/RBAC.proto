@@ -10,7 +10,8 @@ message Enterprise {
   string id           = 1;
   string slug         = 2;  // unique URL-safe identifier, e.g. "acme-corp"
   string name         = 3;
-  string plan         = 4;  // free | pro | enterprise
+  reserved 4;
+  reserved "plan";
   int64  utcCreatedAt = 5;  // epoch millis
   string domain       = 6;  // primary domain, e.g. "acme.com"
   bool deleted        = 7;

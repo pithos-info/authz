@@ -3,10 +3,9 @@
 -- changeset pithos:rbac-001 labels:rbac failOnError:true
 
 CREATE TABLE "enterprise" (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id             TEXT PRIMARY KEY,
     slug           TEXT UNIQUE NOT NULL,
     name           TEXT NOT NULL,
-    plan           TEXT NOT NULL DEFAULT 'free',
     domain         TEXT,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
@@ -14,8 +13,8 @@ CREATE TABLE "enterprise" (
 );
 
 CREATE TABLE "user" (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
+    id             TEXT PRIMARY KEY,
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     email          TEXT NOT NULL,
     "externalId"   TEXT NOT NULL,
     "idpProvider"  TEXT NOT NULL,
@@ -28,8 +27,8 @@ CREATE TABLE "user" (
 );
 
 CREATE TABLE "group" (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
+    id             TEXT PRIMARY KEY,
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     name           TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
@@ -38,15 +37,15 @@ CREATE TABLE "group" (
 );
 
 CREATE TABLE "groupMember" (
-    "groupId"      UUID NOT NULL REFERENCES groups(id),
-    "userId"       UUID NOT NULL REFERENCES users(id),
+    "groupId"      TEXT NOT NULL REFERENCES "group"(id),
+    "userId"       TEXT NOT NULL REFERENCES "user"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("groupId", "userId")
 );
 
-CREATE TABLE role (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
+CREATE TABLE "role" (
+    id             TEXT PRIMARY KEY,
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     name           TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "deleted"      BOOLEAN DEFAULT FALSE,
@@ -55,31 +54,31 @@ CREATE TABLE role (
 );
 
 CREATE TABLE "userRole" (
-    "userId"       UUID NOT NULL REFERENCES users(id),
-    "roleId"       UUID NOT NULL REFERENCES roles(id),
-    "grantedById"  UUID REFERENCES users(id),
+    "userId"       TEXT NOT NULL REFERENCES "user"(id),
+    "roleId"       TEXT NOT NULL REFERENCES "role"(id),
+    "grantedById"  TEXT REFERENCES "user"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("userId", "roleId")
 );
 
 CREATE TABLE "groupRole" (
-    "groupId"      UUID NOT NULL REFERENCES groups(id),
-    "roleId"       UUID NOT NULL REFERENCES roles(id),
+    "groupId"      TEXT NOT NULL REFERENCES "group"(id),
+    "roleId"       TEXT NOT NULL REFERENCES "role"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("groupId", "roleId")
 );
 
 CREATE TABLE "rolePermission" (
-    "roleId"       UUID NOT NULL REFERENCES roles(id),
+    "roleId"       TEXT NOT NULL REFERENCES "role"(id),
     permission     TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("roleId", permission)
 );
 
 CREATE TABLE "apiKey" (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "enterpriseId" UUID NOT NULL REFERENCES enterprises(id),
-    "userId"       UUID NOT NULL REFERENCES users(id),
+    id             TEXT PRIMARY KEY,
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
+    "userId"       TEXT NOT NULL REFERENCES "user"(id),
     name           TEXT NOT NULL,
     "keyHash"      TEXT UNIQUE NOT NULL,
     "keyPrefix"    TEXT NOT NULL,
@@ -93,8 +92,8 @@ CREATE TABLE "apiKey" (
 CREATE INDEX ON "user" ("enterpriseId");
 CREATE INDEX ON "group" ("enterpriseId");
 CREATE INDEX ON "role" ("enterpriseId");
-CREATE INDEX ON "groupMembers" ("userId");
-CREATE INDEX ON "userRoles" ("roleId");
-CREATE INDEX ON "groupRoles" ("roleId");
-CREATE INDEX ON "apiKeys" ("userId");
-CREATE INDEX ON "apiKeys" ("enterpriseId");
+CREATE INDEX ON "groupMember" ("userId");
+CREATE INDEX ON "userRole" ("roleId");
+CREATE INDEX ON "groupRole" ("roleId");
+CREATE INDEX ON "apiKey" ("userId");
+CREATE INDEX ON "apiKey" ("enterpriseId");

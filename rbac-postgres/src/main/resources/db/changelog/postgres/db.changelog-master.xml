@@ -6,5 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
     <include file="db/changelog/postgres/001-rbac-schema.sql"/>
+    <include file="db/changelog/postgres/002-system-bootstrap.sql"/>
+    <include file="db/changelog/postgres/003-pithos-bootstrap.sql"/>
 
 </databaseChangeLog>
