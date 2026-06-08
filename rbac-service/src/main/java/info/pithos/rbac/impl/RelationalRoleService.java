@@ -38,7 +38,6 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
             .setId(UUID.randomUUID().toString())
             .setEnterpriseId(authEnterpriseId(rc).toString())
             .setName(name)
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return store.insert(dc(rc), role)
             .thenCompose(created -> listCache.delete(rc, listCache.listKey())

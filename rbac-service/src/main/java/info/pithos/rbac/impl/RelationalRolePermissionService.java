@@ -34,7 +34,6 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
         Rbac.RolePermission rolePermission = Rbac.RolePermission.newBuilder()
             .setRoleId(roleId)
             .setPermission(permission)
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return relationalClient.query(dc(rc), STMT.insert(rolePermission))
             .thenApply(rows -> toRolePermission(rows.get(0)));

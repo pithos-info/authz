@@ -38,7 +38,6 @@ public class RelationalGroupService extends AbstractRbacService implements Group
             .setId(UUID.randomUUID().toString())
             .setEnterpriseId(authEnterpriseId(rc).toString())
             .setName(name)
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return store.insert(dc(rc), group)
             .thenCompose(created -> listCache.delete(rc, listCache.listKey())

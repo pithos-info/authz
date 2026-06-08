@@ -33,7 +33,6 @@ public class RelationalGroupRoleService extends AbstractRbacService implements G
         Rbac.GroupRole groupRole = Rbac.GroupRole.newBuilder()
             .setGroupId(groupId)
             .setRoleId(roleId)
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return relationalClient.query(dc(rc), STMT.insert(groupRole))
             .thenApply(rows -> toGroupRole(rows.get(0)));

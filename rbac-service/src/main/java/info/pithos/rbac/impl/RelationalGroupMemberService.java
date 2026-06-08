@@ -34,7 +34,6 @@ public class RelationalGroupMemberService extends AbstractRbacService implements
         Rbac.GroupMember member = Rbac.GroupMember.newBuilder()
             .setGroupId(groupId)
             .setUserId(userId)
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return relationalClient.query(dc(rc), STMT.insert(member))
             .thenApply(rows -> toGroupMember(rows.get(0)));

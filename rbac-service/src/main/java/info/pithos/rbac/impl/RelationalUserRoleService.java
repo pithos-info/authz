@@ -35,7 +35,6 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
             .setUserId(userId)
             .setRoleId(roleId)
             .setGrantedById(authUserId(rc).toString())
-            .setUtcCreatedAt(System.currentTimeMillis())
             .build();
         return relationalClient.query(dc(rc), STMT.insert(userRole))
             .thenApply(rows -> toUserRole(rows.get(0)));
