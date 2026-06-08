@@ -252,6 +252,102 @@ Migrations run inside a transaction so a failed migration leaves the schema in a
 
 ---
 
+## Caching
+
+### Cache key convention
+
+All cache keys follow the format:
+
+```
+{enterpriseId}:proto:{fullTypeName}:{qualifier}
+```
+
+The `{enterpriseId}:` prefix is added automatically by `AbstractDistributedCacheClient.createKey`. The part you pass to the cache client is `proto:{fullTypeName}:{qualifier}`:
+
+| What | Key passed | Full Redis key |
+|---|---|---|
+| Single entity by id | `proto:info.pithos.rbac.model.Group:{uuid}` | `{eid}:proto:info.pithos.rbac.model.Group:{uuid}` |
+| Enterprise-wide list | `proto:info.pithos.rbac.model.Group:list` | `{eid}:proto:info.pithos.rbac.model.Group:list` |
+
+The `proto:` segment identifies the serialization format, distinguishing protobuf-backed entries from other cache values (session tokens, rate-limit counters, etc.) in the same Redis instance.
+
+### What is cached
+
+| Service | What | Strategy |
+|---|---|---|
+| `EnterpriseService.get` | Single `Enterprise` by id | `ProtoBufRelationalClient` read-through + async write-back |
+| `GroupService.get` | Single `Group` by id | Same |
+| `GroupService.list` | All groups for an enterprise | `ProtoBufListCache` read-through + async write-back |
+| `RoleService.get` | Single `Role` by id | Same as group |
+| `RoleService.list` | All roles for an enterprise | `ProtoBufListCache` read-through + async write-back |
+
+`getUserGroups` and `getUserRoles` are user-scoped queries and are not cached — their result sets vary per caller.
+
+### Single-entity cache (`ProtoBufRelationalClient`)
+
+Entity services wired with a `DistributedCacheClient` and `AsyncTaskQueue` get caching automatically:
+
+- **`findById`** — cache-first; on a miss, queries the DB and enqueues a background write-back via a distributed lock (prevents stampede).
+- **`insert`** — DB insert, then enqueues a background write-back.
+- **`update`** — evicts the cache entry **before** the DB write (prevents stale read-through during the update window).
+- **`softDelete` / `delete`** — evicts after a successful DB operation.
+
+No code changes are needed in the service — just pass `cacheClient` and `taskQueue` to the factory:
+
+```java
+this.store = ProtoBufRelationalClient.of(relationalClient, cacheClient, taskQueue,
+                                         Rbac.Group.getDefaultInstance(), "deleted");
+```
+
+### List cache (`ProtoBufListCache`)
+
+`ProtoBufListCache<T>` stores a `List<T>` as a binary blob using `ProtoBufSerde` per element (delimited wire format), consistent with how `ProtoBufCache` serializes single entities.
+
+```java
+this.listCache = ProtoBufListCache.of(cacheClient, Rbac.Group.getDefaultInstance());
+
+// Read-through
+listCache.get(rc, listCache.listKey()).thenCompose(cached -> {
+    if (cached != null) return CompletableFuture.completedFuture(cached);
+    return queryDb().thenApply(list -> {
+        taskQueue.enqueue(() -> listCache.set(rc, listCache.listKey(), list)); // async
+        return list;
+    });
+});
+
+// Synchronous eviction on any mutation
+listCache.delete(rc, listCache.listKey())
+```
+
+`listKey()` returns `proto:{fullTypeName}:list` derived from the prototype — services never construct the key string manually.
+
+### Cache invalidation on mutation
+
+List cache is evicted synchronously (as part of the `CompletableFuture` chain) after every successful mutation so a subsequent list call always reflects the change:
+
+```java
+// create/update — evict list after DB write, then return the entity
+store.insert(dc(rc), group)
+    .thenCompose(created -> listCache.delete(rc, listCache.listKey())
+        .thenApply(d -> created));
+
+// delete — evict list after soft-delete
+store.softDelete(dc(rc), id)
+    .thenCompose(n -> listCache.delete(rc, listCache.listKey()))
+    .thenAccept(d -> {});
+```
+
+Write-back on cache miss is async (via `taskQueue.enqueue`) so the DB query is not held up waiting for Redis.
+
+### Backend wiring
+
+- **Cloud SQL module** (`CloudSqlRbacModule`) — uses `MemoryStoreCacheClient` (GCP Memorystore).
+- **Postgres module** (`PostgresRbacModule`) — uses `RedisCacheClient`.
+
+Both start the cache client synchronously in `init()` (`.join()`) before constructing services, ensuring Redis is reachable before the first request is served.
+
+---
+
 ## DDL conventions
 
 - All tables use `UUID PRIMARY KEY DEFAULT gen_random_uuid()` for entity tables.

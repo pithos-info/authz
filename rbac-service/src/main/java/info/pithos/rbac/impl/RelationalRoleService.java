@@ -1,11 +1,14 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.cache.DistributedCacheClient;
+import info.pithos.data.cache.ProtoBufListCache;
 import info.pithos.data.relational.PreparedQuery;
 import info.pithos.data.relational.client.ProtoBufRelationalClient;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -16,10 +19,17 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalRoleService extends AbstractRbacService implements RoleService {
 
     private final ProtoBufRelationalClient<Rbac.Role> store;
+    private final ProtoBufListCache<Rbac.Role> listCache;
+    private final AsyncTaskQueue taskQueue;
 
-    public RelationalRoleService(RelationalClient relationalClient) {
+    public RelationalRoleService(RelationalClient relationalClient,
+                                  DistributedCacheClient cacheClient,
+                                  AsyncTaskQueue taskQueue) {
         super(relationalClient);
-        this.store = ProtoBufRelationalClient.of(relationalClient, Rbac.Role.getDefaultInstance(), "deleted");
+        this.store = ProtoBufRelationalClient.of(relationalClient, cacheClient, taskQueue,
+                                                 Rbac.Role.getDefaultInstance(), "deleted");
+        this.listCache = ProtoBufListCache.of(cacheClient, Rbac.Role.getDefaultInstance());
+        this.taskQueue = taskQueue;
     }
 
     @Override
@@ -30,7 +40,9 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
             .setName(name)
             .setUtcCreatedAt(System.currentTimeMillis())
             .build();
-        return store.insert(dc(rc), role);
+        return store.insert(dc(rc), role)
+            .thenCompose(created -> listCache.delete(rc, listCache.listKey())
+                .thenApply(d -> created));
     }
 
     @Override
@@ -40,19 +52,30 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
 
     @Override
     public CompletableFuture<Rbac.Role> update(RequestContext rc, Rbac.Role role) {
-        return store.update(dc(rc), role);
+        return store.update(dc(rc), role)
+            .thenCompose(updated -> listCache.delete(rc, listCache.listKey())
+                .thenApply(d -> updated));
     }
 
     @Override
     public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return store.softDelete(dc(rc), id).thenAccept(n -> {});
+        return store.softDelete(dc(rc), id)
+            .thenCompose(n -> listCache.delete(rc, listCache.listKey()))
+            .thenAccept(d -> {});
     }
 
     @Override
     public CompletableFuture<List<Rbac.Role>> list(RequestContext rc) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM role WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
-        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
+        return listCache.get(rc, listCache.listKey()).thenCompose(cached -> {
+            if (cached != null) return CompletableFuture.completedFuture(cached);
+            String sql = "SELECT " + store.statement().columnList()
+                + " FROM role WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
+            return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}))
+                .thenApply(roles -> {
+                    taskQueue.enqueue(() -> listCache.set(rc, listCache.listKey(), roles));
+                    return roles;
+                });
+        });
     }
 
     @Override

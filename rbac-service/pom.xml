@@ -22,6 +22,10 @@
             <artifactId>info-pithos-data-relational-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>info.pithos.data.cache</groupId>
+            <artifactId>info-pithos-data-cache-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>info.pithos.runtime.core</groupId>
             <artifactId>pithos-runtime-core-model</artifactId>
         </dependency>

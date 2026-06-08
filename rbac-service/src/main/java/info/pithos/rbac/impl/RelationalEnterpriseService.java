@@ -1,11 +1,13 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.relational.PreparedQuery;
 import info.pithos.data.relational.client.ProtoBufRelationalClient;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.rbac.AbstractRbacService;
 import info.pithos.rbac.EnterpriseService;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -16,9 +18,12 @@ public class RelationalEnterpriseService extends AbstractRbacService implements 
 
     private final ProtoBufRelationalClient<Rbac.Enterprise> store;
 
-    public RelationalEnterpriseService(RelationalClient relationalClient) {
+    public RelationalEnterpriseService(RelationalClient relationalClient,
+                                       DistributedCacheClient cacheClient,
+                                       AsyncTaskQueue taskQueue) {
         super(relationalClient);
-        this.store = ProtoBufRelationalClient.of(relationalClient, Rbac.Enterprise.getDefaultInstance(), "deleted");
+        this.store = ProtoBufRelationalClient.of(relationalClient, cacheClient, taskQueue,
+                                                 Rbac.Enterprise.getDefaultInstance(), "deleted");
     }
 
     @Override
