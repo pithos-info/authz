@@ -32,6 +32,7 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
     @Override
     public CompletableFuture<Rbac.UserRole> grant(RequestContext rc, String userId, String roleId) {
         Rbac.UserRole userRole = Rbac.UserRole.newBuilder()
+            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
             .setUserId(userId)
             .setRoleId(roleId)
             .setGrantedById(authUserId(rc).toString())
@@ -86,6 +87,7 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
 
     private static Rbac.UserRole toUserRole(Row row) {
         Rbac.UserRole.Builder b = Rbac.UserRole.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
             .setUserId(row.getStr("userId"))
             .setRoleId(row.getStr("roleId"))
             .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"));

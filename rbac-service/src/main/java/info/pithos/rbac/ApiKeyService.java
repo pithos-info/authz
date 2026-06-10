@@ -18,4 +18,8 @@ public interface ApiKeyService {
 
     /** Lists API keys for {@code authContext.userId} within {@code authContext.enterpriseId}. */
     CompletableFuture<List<Rbac.ApiKey>> list(RequestContext rc);
+
+    CompletableFuture<Optional<Rbac.ApiKey>> findByKeyHash(RequestContext rc, String keyHash);
+
+    CompletableFuture<Void> touch(RequestContext rc, String id);
 }

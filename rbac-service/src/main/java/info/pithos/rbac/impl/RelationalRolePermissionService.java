@@ -32,6 +32,7 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
     @Override
     public CompletableFuture<Rbac.RolePermission> add(RequestContext rc, String roleId, String permission) {
         Rbac.RolePermission rolePermission = Rbac.RolePermission.newBuilder()
+            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
             .setRoleId(roleId)
             .setPermission(permission)
             .build();
@@ -108,6 +109,7 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
 
     private static Rbac.RolePermission toRolePermission(Row row) {
         return Rbac.RolePermission.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
             .setRoleId(row.getStr("roleId"))
             .setPermission(row.getString("permission"))
             .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))

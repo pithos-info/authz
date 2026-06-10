@@ -38,10 +38,11 @@ CREATE TABLE "group" (
 );
 
 CREATE TABLE "groupMember" (
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     "groupId"      TEXT NOT NULL REFERENCES "group"(id),
     "userId"       TEXT NOT NULL REFERENCES "user"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY ("groupId", "userId")
+    PRIMARY KEY ("enterpriseId", "groupId", "userId")
 );
 
 CREATE TABLE "role" (
@@ -55,25 +56,28 @@ CREATE TABLE "role" (
 );
 
 CREATE TABLE "userRole" (
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     "userId"       TEXT NOT NULL REFERENCES "user"(id),
     "roleId"       TEXT NOT NULL REFERENCES "role"(id),
     "grantedById"  TEXT REFERENCES "user"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY ("userId", "roleId")
+    PRIMARY KEY ("enterpriseId", "userId", "roleId")
 );
 
 CREATE TABLE "groupRole" (
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     "groupId"      TEXT NOT NULL REFERENCES "group"(id),
     "roleId"       TEXT NOT NULL REFERENCES "role"(id),
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY ("groupId", "roleId")
+    PRIMARY KEY ("enterpriseId", "groupId", "roleId")
 );
 
 CREATE TABLE "rolePermission" (
+    "enterpriseId" TEXT NOT NULL REFERENCES "enterprise"(id),
     "roleId"       TEXT NOT NULL REFERENCES "role"(id),
     permission     TEXT NOT NULL,
     "utcCreatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY ("roleId", permission)
+    PRIMARY KEY ("enterpriseId", "roleId", permission)
 );
 
 CREATE TABLE "apiKey" (
@@ -94,7 +98,11 @@ CREATE INDEX ON "user" ("enterpriseId");
 CREATE INDEX ON "group" ("enterpriseId");
 CREATE INDEX ON "role" ("enterpriseId");
 CREATE INDEX ON "groupMember" ("userId");
+CREATE INDEX ON "groupMember" ("groupId");
+CREATE INDEX ON "userRole" ("userId");
 CREATE INDEX ON "userRole" ("roleId");
 CREATE INDEX ON "groupRole" ("roleId");
+CREATE INDEX ON "groupRole" ("groupId");
+CREATE INDEX ON "rolePermission" ("roleId");
 CREATE INDEX ON "apiKey" ("userId");
 CREATE INDEX ON "apiKey" ("enterpriseId");

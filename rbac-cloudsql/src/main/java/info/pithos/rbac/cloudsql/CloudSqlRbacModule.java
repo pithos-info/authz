@@ -25,6 +25,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 public final class CloudSqlRbacModule extends RbacServiceModule {
 
@@ -44,17 +45,6 @@ public final class CloudSqlRbacModule extends RbacServiceModule {
             this.cacheClient      = new MemoryStoreCacheClient(this.getApplicationContext());
             AsyncTaskQueue taskQueue = this.getApplicationContext().getSystemContext().getTaskQueue();
 
-            this.relationalClient.start(30, TimeUnit.SECONDS)
-                .thenCompose(started -> this.relationalClient.transaction(conn -> {
-                    Database db = DatabaseFactory.getInstance()
-                        .findCorrectDatabaseImplementation(new JdbcConnection(conn));
-                    new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)
-                        .update(new Contexts(), new LabelExpression());
-                }))
-                .join();
-
-            this.cacheClient.start(30, TimeUnit.SECONDS).join();
-
             this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue);
             this.userService            = new RelationalUserService(this.relationalClient);
             this.groupService           = new RelationalGroupService(this.relationalClient, this.cacheClient, taskQueue);
@@ -66,6 +56,24 @@ public final class CloudSqlRbacModule extends RbacServiceModule {
             this.apiKeyService          = new RelationalApiKeyService(this.relationalClient);
         }
         return this.initialized.get();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> start(long timeout, TimeUnit unit) {
+        return relationalClient.start(timeout, unit)
+            .thenCompose(ok -> relationalClient.transaction(conn -> {
+                Database db = DatabaseFactory.getInstance()
+                    .findCorrectDatabaseImplementation(new JdbcConnection(conn));
+                new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)
+                    .update(new Contexts(), new LabelExpression());
+            }))
+            .thenCompose(v -> cacheClient.start(timeout, unit));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> shutdown(long timeout, TimeUnit unit) {
+        return cacheClient.shutdown(timeout, unit)
+            .thenCompose(ok -> relationalClient.shutdown(timeout, unit));
     }
 
     @Override

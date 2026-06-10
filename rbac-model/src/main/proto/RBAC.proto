@@ -69,27 +69,31 @@ message ApiKey {
 // --- Association messages (used in mutation / event payloads) ---
 
 message GroupMember {
-  string groupId      = 1;
-  string userId       = 2;
-  int64  utcCreatedAt = 3; // epoch millis
-}
-
-message UserRole {
-  string userId       = 1;
-  string roleId       = 2;
-  string grantedById  = 3;  // userId of the granting principal
+  string enterpriseId = 1;
+  string groupId      = 2;
+  string userId       = 3;
   int64  utcCreatedAt = 4; // epoch millis
 }
 
+message UserRole {
+  string enterpriseId = 1;
+  string userId       = 2;
+  string roleId       = 3;
+  string grantedById  = 4;  // userId of the granting principal
+  int64  utcCreatedAt = 5; // epoch millis
+}
+
 message GroupRole {
-  string groupId      = 1;
-  string roleId       = 2;
+  string enterpriseId = 1;
+  string groupId      = 2;
+  string roleId       = 3;
   int64  utcCreatedAt = 4; // epoch millis
 }
 
 // Permission in resource:action format, e.g. "agents:run", "agents:create"
 message RolePermission {
-  string roleId       = 1;
-  string permission   = 2;
-  int64  utcCreatedAt = 3; // epoch millis
+  string enterpriseId = 1;
+  string roleId       = 2;
+  string permission   = 3;
+  int64  utcCreatedAt = 4; // epoch millis
 }

@@ -42,4 +42,19 @@ public class RelationalApiKeyService extends AbstractRbacService implements ApiK
             + " FROM \"apiKey\" WHERE \"enterpriseId\" = ? AND \"userId\" = ? ORDER BY \"utcCreatedAt\"";
         return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc), authUserId(rc)}));
     }
+
+    @Override
+    public CompletableFuture<Void> touch(RequestContext rc, String id) {
+        String sql = "UPDATE \"apiKey\" SET \"lastUsedAt\" = now() WHERE id = ?";
+        return relationalClient.execute(dc(rc), new PreparedQuery(sql, new Object[]{id}))
+            .thenAccept(n -> {});
+    }
+
+    @Override
+    public CompletableFuture<Optional<Rbac.ApiKey>> findByKeyHash(RequestContext rc, String keyHash) {
+        String sql = "SELECT " + store.statement().columnList()
+            + " FROM \"apiKey\" WHERE \"keyHash\" = ?";
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{keyHash}))
+            .thenApply(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)));
+    }
 }

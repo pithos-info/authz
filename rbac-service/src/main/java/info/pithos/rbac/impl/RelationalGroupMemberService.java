@@ -32,6 +32,7 @@ public class RelationalGroupMemberService extends AbstractRbacService implements
     @Override
     public CompletableFuture<Rbac.GroupMember> add(RequestContext rc, String groupId, String userId) {
         Rbac.GroupMember member = Rbac.GroupMember.newBuilder()
+            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
             .setGroupId(groupId)
             .setUserId(userId)
             .build();
@@ -78,6 +79,7 @@ public class RelationalGroupMemberService extends AbstractRbacService implements
 
     private static Rbac.GroupMember toGroupMember(Row row) {
         return Rbac.GroupMember.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
             .setGroupId(row.getStr("groupId"))
             .setUserId(row.getStr("userId"))
             .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))

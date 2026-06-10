@@ -10,5 +10,17 @@ VALUES ('1', '1', 'admin', now(), now());
 INSERT INTO "role" (id, "enterpriseId", name, "utcCreatedAt", "utcModifiedAt")
 VALUES ('1', '1', 'admin', now(), now());
 
+INSERT INTO "role" (id, "enterpriseId", name, "utcCreatedAt", "utcModifiedAt")
+VALUES ('2', '1', 'dev', now(), now());
+
 INSERT INTO "user" (id, "enterpriseId", email, "externalId", "idpProvider", "displayName", "utcCreatedAt", "utcModifiedAt")
 VALUES ('1', '1', 'shilpa@geekrox.com', 'pending:shilpa@geekrox.com', 'google', 'shilpa', now(), now());
+
+INSERT INTO "groupMember" ("enterpriseId", "groupId", "userId", "utcCreatedAt")
+VALUES ('1', '1', '1', now());
+
+INSERT INTO "userRole" ("enterpriseId", "userId", "roleId", "grantedById", "utcCreatedAt")
+VALUES ('1', '1', '1', NULL, now());
+
+INSERT INTO "userRole" ("enterpriseId", "userId", "roleId", "grantedById", "utcCreatedAt")
+VALUES ('1', '1', '2', NULL, now());

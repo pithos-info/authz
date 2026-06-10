@@ -31,6 +31,7 @@ public class RelationalGroupRoleService extends AbstractRbacService implements G
     @Override
     public CompletableFuture<Rbac.GroupRole> assign(RequestContext rc, String groupId, String roleId) {
         Rbac.GroupRole groupRole = Rbac.GroupRole.newBuilder()
+            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
             .setGroupId(groupId)
             .setRoleId(roleId)
             .build();
@@ -64,6 +65,7 @@ public class RelationalGroupRoleService extends AbstractRbacService implements G
 
     private static Rbac.GroupRole toGroupRole(Row row) {
         return Rbac.GroupRole.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
             .setGroupId(row.getStr("groupId"))
             .setRoleId(row.getStr("roleId"))
             .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))

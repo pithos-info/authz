@@ -7,11 +7,51 @@ Role-based access control for Pithos multi-tenant enterprises. Manages users, gr
 ## Module structure
 
 ```
-rbac-model/     RBAC.proto — all data types as protobuf messages
-rbac-service/   Service interfaces + relational implementations
-rbac-cloudsql/  Cloud SQL (PostgreSQL-compatible) Guice module
-rbac-postgres/  Postgres Guice module
+rbac-model/     RBAC.proto (data layer types) + RBACService.proto (public API types + gRPC service defs)
+rbac-service/   Service interfaces + relational implementations (data layer only)
+rbac-cloudsql/  Cloud SQL (PostgreSQL-compatible) Guice module — used in GCP
+rbac-postgres/  Postgres Guice module — used locally
+rbac-app/       Runnable assembly: REST + gRPC servers, Guice wiring, YAML config loading
 ```
+
+---
+
+## Two proto files, two boundaries
+
+### `RBAC.proto` — data model (`info.pithos.rbac.model`)
+
+Internal representation. Used by service interfaces, relational clients, and the cache layer. Never exposed directly over any protocol.
+
+### `RBACService.proto` — public service API (`info.pithos.rbac.service`)
+
+The canonical public contract for REST and gRPC. Defines its own request/response message types — no `Rbac.*` types appear here. Handler code maps between the two layers using `ProtoBufMapper`.
+
+Key design decisions in the service API types:
+
+- Response types are named after the domain object (`Enterprise`, `User`, `Group`, `Role`) without a `Response` suffix — these are canonical API types, not DTOs.
+- `Role` carries `repeated string permissions` — the effective permission strings.
+- `Group` carries `repeated Role roles` — the roles assigned to the group, each with permissions.
+- `Enterprise` carries `repeated Group groups` and `repeated Role roles` — the full RBAC policy graph for the tenant, excluding user identity.
+- `User` carries `repeated Group groups` and `repeated Role roles` — the user's complete RBAC footprint.
+- `ApiKey.keyHash` is not present in `ApiKey` response type — the hash never leaves the server.
+- Fields like `deleted`, `externalId`, `idpProvider` exist in `Rbac.*` data types but are absent from service API types; `ProtoBufMapper` drops them automatically during the scalar copy pass.
+
+### `ProtoBufMapper` — data model → service API
+
+`ProtoBufMapper.map(sourceProto, targetBuilder)` copies scalar fields by name match (same field name, same proto type, same repeated cardinality). Message-typed nested fields (`groups`, `roles`, `permissions`) must be populated separately by the handler after the scalar pass, using the cache-backed list service APIs.
+
+```java
+// Scalar fields copied automatically
+service.Enterprise base = ProtoBufMapper.map(dataEnterprise, service.Enterprise.newBuilder());
+
+// Nested collections assembled explicitly from list services
+service.Enterprise full = base.toBuilder()
+    .addAllRoles(buildApiRoles(rc, injector))
+    .addAllGroups(buildApiGroups(rc, injector))
+    .build();
+```
+
+---
 
 ---
 
@@ -29,14 +69,16 @@ All entities are protobuf messages defined in `RBAC.proto`. The schema has two k
 | `Role` | `role` | Built-in or custom, scoped to an enterprise |
 | `ApiKey` | `apiKey` | Hard-deleted on revoke; no soft delete |
 
-**Association messages** — no surrogate `id`; composite primary key of their FK fields.
+**Association messages** — no surrogate `id`; composite primary key led by `enterpriseId`.
 
 | Message | Table | Composite PK |
 |---|---|---|
-| `GroupMember` | `groupMember` | `(groupId, userId)` |
-| `UserRole` | `userRole` | `(userId, roleId)` |
-| `GroupRole` | `groupRole` | `(groupId, roleId)` |
-| `RolePermission` | `rolePermission` | `(roleId, permission)` |
+| `GroupMember` | `groupMember` | `(enterpriseId, groupId, userId)` |
+| `UserRole` | `userRole` | `(enterpriseId, userId, roleId)` |
+| `GroupRole` | `groupRole` | `(enterpriseId, groupId, roleId)` |
+| `RolePermission` | `rolePermission` | `(enterpriseId, roleId, permission)` |
+
+`enterpriseId` is the leading PK component on all association tables — this doubles as the partition key for future distributed storage backends, and allows enterprise-scoped range scans without a join to the parent entity.
 
 ### Naming conventions
 
@@ -221,34 +263,231 @@ Entity services pass `RelationalClient` to `super()` (required by the constructo
 
 ---
 
-## Module and lifecycle
+## Authentication
 
-`RbacServiceModule` (abstract) holds all service fields and registers Guice bindings. Concrete modules (`CloudSqlRbacModule`, `PostgresRbacModule`) override `init()` to:
+### OAuth (human users)
 
-1. Construct the `RelationalClient` (HikariCP pool).
-2. Start the pool and run Liquibase migrations synchronously (`.join()`).
-3. Construct all services.
+Human users authenticate via an IdP (Google, Okta, Keycloak, etc.). The `User` record stores `externalId` (the IdP subject) and `idpProvider`. No passwords are stored in RBAC.
+
+`POST /auth/login` with `{"username":"...","password":"..."}` exchanges credentials through `KeycloakOAuthClient` and returns a short-lived access token + refresh token.
+
+Subsequent requests carry the token as `Authorization: Bearer <jwt>`. `BaseServiceHandler.handleHttp` calls `OAuthClient.introspectToken`, validates the token is active, and populates `RequestContext` with `userId` (from the token subject) and `enterpriseId` (from the `X-Enterprise-Id` header).
+
+### API keys (headless / programmatic access)
+
+Service accounts that cannot perform an OAuth flow authenticate with a long-lived API key.
+
+**Key structure:**
+
+- `keyHash` — SHA-256 of the raw key, stored in the DB. The raw key is never persisted.
+- `keyPrefix` — first 12 characters, shown in the UI for identification.
+- `permissions` — explicit subset of the owning user's effective permissions.
+- `expiresAt` — epoch millis; `0` means no expiry.
+- `lastUsedAt` — updated asynchronously on every successful use.
+
+**Auth flow:**
+
+```
+Authorization: Bearer <raw-api-key>
+```
+
+`BaseServiceHandler.handleHttp` detects that the bearer value is not a JWT (fewer than 2 dots) and routes to `ApiKeyResolver.resolve(bootstrap, rawKey)` instead of `OAuthClient.introspectToken`. The resolver:
+
+1. SHA-256 hashes the raw key.
+2. Queries `apiKey` by `keyHash` (unique index — single row lookup).
+3. Validates the key is not expired.
+4. Returns a `TokenIntrospection` carrying `subject = userId` and `enterpriseId` from the key record — clients do not need to send `X-Enterprise-Id`.
+5. Fires a background `UPDATE "apiKey" SET "lastUsedAt" = now()` without blocking the response.
+
+`RbacApiKeyResolver` (in `rbac-app`) implements `ApiKeyResolver` (in `service-container-core`) and is installed at startup via an eager Guice singleton — no handler changes required.
+
+**Bootstrap seed key (dev only):**
+
+```
+raw key : pithos-dev-key-00000000000000000000
+prefix  : pithos-dev-k
+owner   : svc-dev@pithos.info  (service account, dev role)
+```
+
+---
+
+## rbac-app — handler and gRPC layer
+
+### Handler pattern
+
+Each entity has a `XxxHandlers` class (in `info.pithos.rbac.app.handler`) containing one static `final` inner class per RPC operation. Each inner class extends `BaseServiceHandler<Req, Resp>` and receives its dependencies via `@Inject`.
 
 ```java
-@Override
-public boolean init() {
-    if (this.initialized.compareAndSet(false, true)) {
-        this.relationalClient = new PostgresClient(this.getApplicationContext());
-        this.relationalClient.start(30, TimeUnit.SECONDS)
-            .thenCompose(started -> this.relationalClient.transaction(conn -> {
-                Database db = DatabaseFactory.getInstance()
-                    .findCorrectDatabaseImplementation(new JdbcConnection(conn));
-                new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)
-                    .update(new Contexts(), new LabelExpression());
-            }))
-            .join();
-        // construct services ...
+public final class GroupHandlers {
+    private GroupHandlers() {}
+
+    public static final class Create extends BaseServiceHandler<CreateGroupRequest, Group> {
+        private final GroupService service;
+
+        @Inject
+        public Create(OAuthClient oAuthClient, GroupService service) {
+            super(oAuthClient);
+            this.service = service;
+        }
+
+        @Override
+        public Uni<Group> handle(CreateGroupRequest req, RequestContext rc) {
+            return Uni.createFrom().completionStage(() -> service.create(rc, req.getName()))
+                .map(created -> ProtoBufMapper.map(created, Group.newBuilder()));
+        }
     }
-    return this.initialized.get();
+    // ...
 }
 ```
 
-Migrations run inside a transaction so a failed migration leaves the schema in a consistent state.
+`BaseServiceHandler.handle(Req, RequestContext)` is called by both the REST and gRPC layers. The HTTP path goes through `handleHttp()` which performs OAuth token introspection first; the gRPC path calls `handle()` directly with a context built from gRPC metadata by `RbacGrpcSupport`.
+
+Handlers that return enriched response types (e.g. `Enterprise` with embedded groups and roles, `User` with embedded groups and roles) use `RbacEnricher` to build the nested collections in parallel via `CompletableFuture.allOf`.
+
+**9 handler files:** `EnterpriseHandlers`, `UserHandlers`, `GroupHandlers`, `RoleHandlers`, `ApiKeyHandlers`, `GroupMemberHandlers`, `UserRoleHandlers`, `GroupRoleHandlers`, `RolePermissionHandlers`.
+
+### gRPC service layer
+
+Each entity also has a `XxxGrpcService` (in `info.pithos.rbac.app.grpc`) that extends the generated `XxxServiceGrpc.XxxServiceImplBase` and delegates every RPC to the matching handler.
+
+```java
+public final class GroupGrpcService extends GroupServiceGrpc.GroupServiceImplBase {
+
+    private final GroupHandlers.Create create;
+    // ...
+
+    @Override
+    public void create(CreateGroupRequest request, StreamObserver<Group> responseObserver) {
+        RbacGrpcSupport.respond(create.handle(request, RbacGrpcSupport.context()), responseObserver);
+    }
+}
+```
+
+`RbacGrpcSupport.context()` reads the gRPC `Metadata` stashed by `RbacGrpcInterceptor` and builds a `RequestContext` from it (enterprise id, user id, request id, etc.). `RbacGrpcSupport.respond()` subscribes to the `Uni`, calls `onNext` + `onCompleted` on success, and maps `ServiceException` error codes to gRPC `Status` values on failure.
+
+**9 gRPC service files + `RbacGrpcSupport`:** `EnterpriseGrpcService`, `UserGrpcService`, `GroupGrpcService`, `RoleGrpcService`, `ApiKeyGrpcService`, `GroupMemberGrpcService`, `UserRoleGrpcService`, `GroupRoleGrpcService`, `RolePermissionGrpcService`.
+
+> **Note — boilerplate:** the current structure has ~10 lines of wiring per RPC method spread across the handler inner-class and the gRPC service. With 9 entities × ~4 RPCs each that is ~360 lines that add no logic. This is the main area to review before finalising.
+
+### REST resource layer
+
+`XxxResource` classes (in `info.pithos.rbac.app.rest.resource`) mount routes on the Vert.x `Router` and delegate to the same handler classes:
+
+```java
+r.get("/enterprises").handler(ctx ->
+    BaseServiceHandler.route(ctx, 200, list, Empty.getDefaultInstance()));
+
+r.post("/enterprises").handler(ctx -> {
+    CreateEnterpriseRequest req = BaseServiceHandler.parseBody(ctx, CreateEnterpriseRequest.newBuilder());
+    if (req == null) return;
+    BaseServiceHandler.route(ctx, 201, create, req);
+});
+```
+
+`BaseServiceHandler.route()` calls `handleHttp()` (OAuth introspection + context build), subscribes to the `Uni`, and writes the proto as JSON on success or an `{"error":"..."}` JSON body with the appropriate HTTP status on failure.
+
+---
+
+## Module and lifecycle
+
+The full lifecycle contract is documented in [`runtime/runtime-core`](../../runtime/runtime-core/README.md). This section covers the RBAC-specific modules.
+
+### Three-phase startup
+
+```
+Phase 1 — ApplicationContextImpl constructor   init() on all modules — no I/O
+Phase 2 — appContext.start(30, SECONDS).join() start() on all modules — connections + migrations
+Phase 3 — grpcServer.start(); httpServer.start() — accept traffic
+```
+
+### PostgresRbacModule / CloudSqlRbacModule
+
+`init()` constructs clients and all service instances — no network calls. `start()` chains: open DB pool → run Liquibase inside a transaction → open cache pool. `shutdown()` closes in reverse order.
+
+```java
+// init() — pure construction
+this.relationalClient = new PostgresClient(this.getApplicationContext());
+this.cacheClient      = new RedisCacheClient(this.getApplicationContext());
+this.enterpriseService = new RelationalEnterpriseService(relationalClient, cacheClient, taskQueue);
+// ... all other services
+
+// start() — ordered: DB pool → Liquibase → cache pool
+return relationalClient.start(timeout, unit)
+    .thenCompose(ok -> relationalClient.transaction(conn -> runLiquibase(conn)))
+    .thenCompose(v  -> cacheClient.start(timeout, unit));
+
+// shutdown() — reverse order
+return cacheClient.shutdown(timeout, unit)
+    .thenCompose(ok -> relationalClient.shutdown(timeout, unit));
+```
+
+Liquibase runs inside a transaction — a failed migration rolls back cleanly.
+
+### Other infrastructure modules
+
+`KeycloakOAuthModule`, `HashiCorpVaultModule`, and `MinioBlobStorageModule` each own a single client. Their `start()` and `shutdown()` are one-liners that delegate directly to the client.
+
+`RbacAppModule` has no lifecycle clients; it inherits the default no-op `start()` and `shutdown()` from `ServiceModule`.
+
+---
+
+## rbac-app — running the service
+
+### Assembly
+
+```
+mvn package -pl rbac-app -am
+java -Drbac.config=/path/to/config.yaml -jar rbac-app/target/rbac-app.jar
+```
+
+The assembly bundles all dependencies into a single fat jar. The main class is `info.pithos.rbac.app.RbacApp`.
+
+### Startup sequence
+
+```
+1. RbacConfigLoader.load(path)         parse YAML → ConfigMap + httpPort + grpcPort
+2. ApplicationContextImpl(creator)     init() all modules (constructs objects, no I/O)
+3. appContext.start(30, SECONDS)        start() all modules in parallel (connections, migrations)
+4. grpcServer.start()                  gRPC server binds port
+5. httpServer.start()                  Vert.x HTTP server binds port
+```
+
+Shutdown reverses steps 5–3, then tears down executor pools via `ApplicationContext.shutdown()`.
+
+### YAML config
+
+Keys are exact proto field names (`camelCase`) so the YAML → JSON → `JsonFormat` path works without a mapping layer. The `server` block is the only non-proto section; it is ignored by `JsonFormat.parser().ignoringUnknownFields()`.
+
+```yaml
+server:
+  httpPort: 8080
+  grpcPort: 9090
+
+bootstrapConfigs:
+  serviceName: rbac-service
+  multiplier: 2
+
+postgresConfigs:   { host: localhost, port: 5432, ... }
+redisConfigs:      { host: localhost, port: 6379, ... }
+keycloakOAuthConfigs: { serverUrl: ..., realm: pithos, ... }
+hashiCorpVaultConfigs: { address: http://localhost:8200, ... }
+minioBlobStorageConfigs: { endpoint: http://localhost:9000, ... }
+```
+
+See `rbac-app/src/main/resources/rbac-config-example.yaml` for a complete template.
+
+### Guice wiring
+
+All bindings are registered in `RbacAppModule`. The module list in `RbacContextCreator` determines which infrastructure stack is used:
+
+| Profile | Modules |
+|---|---|
+| Local | `PostgresRbacModule`, `KeycloakOAuthModule`, `HashiCorpVaultModule`, `MinioBlobStorageModule`, `RbacAppModule` |
+| GCP | `CloudSqlRbacModule`, `GcpIdentityOAuthModule`, `GcpSecretManagerModule`, `GcsBlobStorageModule`, `RbacAppModule` |
+
+Note: Redis (`RedisCacheClient`) is owned and bound by `PostgresRbacModule` — it is not a separate module entry. Adding a standalone `RedisCacheModule` alongside `PostgresRbacModule` would create a duplicate Guice binding and fail at injector creation.
+
+`RbacAppModule` is profile-independent — it only binds handlers, gRPC services, and servers.
 
 ---
 
@@ -344,7 +583,7 @@ Write-back on cache miss is async (via `taskQueue.enqueue`) so the DB query is n
 - **Cloud SQL module** (`CloudSqlRbacModule`) — uses `MemoryStoreCacheClient` (GCP Memorystore).
 - **Postgres module** (`PostgresRbacModule`) — uses `RedisCacheClient`.
 
-Both start the cache client synchronously in `init()` (`.join()`) before constructing services, ensuring Redis is reachable before the first request is served.
+Both open their cache connection in `start()` (after the DB pool is up and migrations have run), not in `init()`. The cache is guaranteed to be ready before the HTTP/gRPC servers accept traffic because `RbacApp` calls `appContext.start().join()` before binding ports.
 
 ---
 
