@@ -15,7 +15,7 @@ INSERT INTO "role" (id, "enterpriseId", name, "utcCreatedAt", "utcModifiedAt")
 VALUES ('40f1960d-9ad3-4aea-af9e-0be5096b849f', '2', 'dev', now(), now());
 
 INSERT INTO "user" (id, "enterpriseId", email, "externalId", "idpProvider", "displayName", "utcCreatedAt", "utcModifiedAt")
-VALUES ('bf470037-fef1-4e57-91a1-b35abdda50ee', '2', 'shilpa@geekrox.com', 'pending-2:shilpa@geekrox.com', 'google', 'shilpa', now(), now());
+VALUES ('bf470037-fef1-4e57-91a1-b35abdda50ee', '2', 'evergetiki', 'pending:evergetiki.agora@gmail.com', 'google', 'evergetiki', now(), now());
 
 INSERT INTO "userRole" ("enterpriseId", "userId", "roleId", "grantedById", "utcCreatedAt")
 VALUES ('2', 'bf470037-fef1-4e57-91a1-b35abdda50ee', '7992fe54-1633-437b-80b7-594805b2ba7d', NULL, now());
