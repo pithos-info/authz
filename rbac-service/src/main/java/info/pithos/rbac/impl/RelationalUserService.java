@@ -56,6 +56,6 @@ public class RelationalUserService extends AbstractRbacService implements UserSe
             + " WHERE id IN (SELECT \"userId\" FROM \"groupMember\" WHERE \"groupId\" = ?)"
             + " AND deleted = false"
             + " ORDER BY email";
-        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{UUID.fromString(groupId)}));
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{groupId}));
     }
 }

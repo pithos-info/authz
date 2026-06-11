@@ -36,7 +36,7 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
     public CompletableFuture<Rbac.Role> create(RequestContext rc, String name) {
         Rbac.Role role = Rbac.Role.newBuilder()
             .setId(UUID.randomUUID().toString())
-            .setEnterpriseId(authEnterpriseId(rc).toString())
+            .setEnterpriseId(authEnterpriseId(rc))
             .setName(name)
             .build();
         return store.insert(dc(rc), role)
@@ -79,7 +79,7 @@ public class RelationalRoleService extends AbstractRbacService implements RoleSe
 
     @Override
     public CompletableFuture<List<Rbac.Role>> getUserRoles(RequestContext rc) {
-        UUID uid = authUserId(rc);
+        String uid = authUserId(rc);
         String sql = "SELECT DISTINCT " + store.statement().columnList()
             + " FROM role"
             + " WHERE id IN ("

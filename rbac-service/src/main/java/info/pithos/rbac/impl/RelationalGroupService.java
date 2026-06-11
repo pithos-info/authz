@@ -36,7 +36,7 @@ public class RelationalGroupService extends AbstractRbacService implements Group
     public CompletableFuture<Rbac.Group> create(RequestContext rc, String name) {
         Rbac.Group group = Rbac.Group.newBuilder()
             .setId(UUID.randomUUID().toString())
-            .setEnterpriseId(authEnterpriseId(rc).toString())
+            .setEnterpriseId(authEnterpriseId(rc))
             .setName(name)
             .build();
         return store.insert(dc(rc), group)

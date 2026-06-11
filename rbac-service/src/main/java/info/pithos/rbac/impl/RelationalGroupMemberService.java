@@ -12,7 +12,6 @@ import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RelationalGroupMemberService extends AbstractRbacService implements GroupMemberService {
@@ -73,7 +72,7 @@ public class RelationalGroupMemberService extends AbstractRbacService implements
                 JOIN "group" g ON g.id = gm."groupId"
                 WHERE gm."userId" = ? AND gm."groupId" = ? AND g."enterpriseId" = ? AND g.deleted = false
             ) AS result
-            """, authUserId(rc), UUID.fromString(groupId), authEnterpriseId(rc))
+            """, authUserId(rc), groupId, authEnterpriseId(rc))
             .thenApply(rows -> rows.get(0).getBoolean("result"));
     }
 

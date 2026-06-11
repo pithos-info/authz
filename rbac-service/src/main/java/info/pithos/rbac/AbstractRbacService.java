@@ -5,7 +5,6 @@ import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
-import java.util.UUID;
 
 public abstract class AbstractRbacService {
 
@@ -20,12 +19,12 @@ public abstract class AbstractRbacService {
         return DataContext.of(rc);
     }
 
-    protected static UUID authEnterpriseId(RequestContext ctx) {
-        return UUID.fromString(ctx.getAuthContext().getEnterpriseId());
+    protected static String authEnterpriseId(RequestContext ctx) {
+        return ctx.getAuthContext().getEnterpriseId();
     }
 
-    protected static UUID authUserId(RequestContext ctx) {
-        return UUID.fromString(ctx.getAuthContext().getUserId());
+    protected static String authUserId(RequestContext ctx) {
+        return ctx.getAuthContext().getUserId();
     }
 
     protected static String pgArray(List<String> values) {

@@ -12,7 +12,6 @@ import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RelationalUserRoleService extends AbstractRbacService implements UserRoleService {
@@ -35,7 +34,7 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
             .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
             .setUserId(userId)
             .setRoleId(roleId)
-            .setGrantedById(authUserId(rc).toString())
+            .setGrantedById(authUserId(rc))
             .build();
         return relationalClient.query(dc(rc), STMT.insert(userRole))
             .thenApply(rows -> toUserRole(rows.get(0)));
@@ -67,8 +66,8 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
 
     @Override
     public CompletableFuture<Boolean> hasRole(RequestContext rc, String roleId) {
-        UUID uid = authUserId(rc);
-        UUID rid = UUID.fromString(roleId);
+        String uid = authUserId(rc);
+        String rid = roleId;
         return relationalClient.query(dc(rc),
             """
             SELECT (

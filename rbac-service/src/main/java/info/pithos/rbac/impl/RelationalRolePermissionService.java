@@ -12,7 +12,6 @@ import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RelationalRolePermissionService extends AbstractRbacService implements RolePermissionService {
@@ -66,7 +65,7 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
 
     @Override
     public CompletableFuture<Boolean> hasPermission(RequestContext rc, String permission) {
-        UUID uid = authUserId(rc);
+        String uid = authUserId(rc);
         return relationalClient.query(dc(rc),
             """
             SELECT (
@@ -89,7 +88,7 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
 
     @Override
     public CompletableFuture<List<String>> getUserPermissions(RequestContext rc) {
-        UUID uid = authUserId(rc);
+        String uid = authUserId(rc);
         return relationalClient.query(dc(rc),
             """
             SELECT DISTINCT rp.permission
