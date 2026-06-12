@@ -1,73 +1,62 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.Row;
-import info.pithos.data.relational.client.ProtoBufRelationalClient;
-import info.pithos.data.relational.client.ProtoBufStatement;
 import info.pithos.data.relational.client.RelationalClient;
-import info.pithos.rbac.AbstractRbacService;
+import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.rbac.UserRoleService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class RelationalUserRoleService extends AbstractRbacService implements UserRoleService {
-
-    private static final ProtoBufStatement<Rbac.UserRole> STMT =
-        ProtoBufStatement.of("userRole", Rbac.UserRole.getDefaultInstance(),
-                             new String[]{"userId", "roleId"});
-
-    private final ProtoBufRelationalClient<Rbac.UserRole> store;
+public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.UserRole>
+        implements UserRoleService {
 
     public RelationalUserRoleService(RelationalClient relationalClient) {
-        super(relationalClient);
-        this.store = ProtoBufRelationalClient.forFilter(relationalClient, "userRole",
-                                                       Rbac.UserRole.getDefaultInstance(), "userId");
+        super(relationalClient, "userRole", Rbac.UserRole.getDefaultInstance(), "userId", "roleId");
+    }
+
+    @Override
+    protected Rbac.UserRole mapRow(Row row) {
+        Rbac.UserRole.Builder b = Rbac.UserRole.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
+            .setUserId(row.getStr("userId"))
+            .setRoleId(row.getStr("roleId"))
+            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"));
+        String grantedById = row.getStr("grantedById");
+        if (grantedById != null) b.setGrantedById(grantedById);
+        return b.build();
     }
 
     @Override
     public CompletableFuture<Rbac.UserRole> grant(RequestContext rc, String userId, String roleId) {
         Rbac.UserRole userRole = Rbac.UserRole.newBuilder()
-            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
+            .setEnterpriseId(authEnterpriseId(rc))
             .setUserId(userId)
             .setRoleId(roleId)
             .setGrantedById(authUserId(rc))
             .build();
-        return relationalClient.query(dc(rc), STMT.insert(userRole))
-            .thenApply(rows -> toUserRole(rows.get(0)));
+        return insert(rc, userRole);
     }
 
     @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String userId, String roleId) {
         Rbac.UserRole key = Rbac.UserRole.newBuilder()
-            .setUserId(userId)
-            .setRoleId(roleId)
-            .build();
-        return relationalClient.execute(dc(rc), STMT.deleteByCompositeId(key)).thenAccept(n -> {});
+            .setUserId(userId).setRoleId(roleId).build();
+        return deleteByKey(rc, key);
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.UserRole>> get(RequestContext rc, String userId, String roleId) {
         Rbac.UserRole key = Rbac.UserRole.newBuilder()
-            .setUserId(userId)
-            .setRoleId(roleId)
-            .build();
-        return relationalClient.query(dc(rc), STMT.selectByCompositeId(key))
-            .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toUserRole(rows.get(0))));
-    }
-
-    @Override
-    public CompletableFuture<List<Rbac.UserRole>> select(RequestContext rc, FilterCriteria filter) {
-        return store.findAll(dc(rc), filter);
+            .setUserId(userId).setRoleId(roleId).build();
+        return getByKey(rc, key);
     }
 
     @Override
     public CompletableFuture<Boolean> hasRole(RequestContext rc, String roleId) {
         String uid = authUserId(rc);
-        String rid = roleId;
         return relationalClient.query(dc(rc),
             """
             SELECT (
@@ -80,18 +69,7 @@ public class RelationalUserRoleService extends AbstractRbacService implements Us
                 )
                 AND EXISTS (SELECT 1 FROM "user" WHERE id = ? AND "enterpriseId" = ? AND deleted = false)
             ) AS result
-            """, uid, rid, uid, rid, uid, authEnterpriseId(rc))
+            """, uid, roleId, uid, roleId, uid, authEnterpriseId(rc))
             .thenApply(rows -> rows.get(0).getBoolean("result"));
-    }
-
-    private static Rbac.UserRole toUserRole(Row row) {
-        Rbac.UserRole.Builder b = Rbac.UserRole.newBuilder()
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setUserId(row.getStr("userId"))
-            .setRoleId(row.getStr("roleId"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"));
-        String grantedById = row.getStr("grantedById");
-        if (grantedById != null) b.setGrantedById(grantedById);
-        return b.build();
     }
 }

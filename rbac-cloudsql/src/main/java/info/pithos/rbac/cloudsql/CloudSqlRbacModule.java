@@ -45,11 +45,11 @@ public final class CloudSqlRbacModule extends RbacServiceModule {
             this.cacheClient      = new MemoryStoreCacheClient(this.getApplicationContext());
             AsyncTaskQueue taskQueue = this.getApplicationContext().getSystemContext().getTaskQueue();
 
-            this.userRoleService        = new RelationalUserRoleService(this.relationalClient);
-            this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue, this.userRoleService);
+            this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue);
             this.userService            = new RelationalUserService(this.relationalClient);
             this.groupService           = new RelationalGroupService(this.relationalClient, this.cacheClient, taskQueue);
             this.groupMemberService     = new RelationalGroupMemberService(this.relationalClient);
+            this.userRoleService        = new RelationalUserRoleService(this.relationalClient);
             this.groupRoleService       = new RelationalGroupRoleService(this.relationalClient);
             this.rolePermissionService  = new RelationalRolePermissionService(this.relationalClient);
             this.roleService            = new RelationalRoleService(this.relationalClient, this.cacheClient, taskQueue);

@@ -1,11 +1,8 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.Row;
-import info.pithos.data.relational.client.ProtoBufRelationalClient;
-import info.pithos.data.relational.client.ProtoBufStatement;
 import info.pithos.data.relational.client.RelationalClient;
-import info.pithos.rbac.AbstractRbacService;
+import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
@@ -14,53 +11,45 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class RelationalRolePermissionService extends AbstractRbacService implements RolePermissionService {
-
-    private static final ProtoBufStatement<Rbac.RolePermission> STMT =
-        ProtoBufStatement.of("rolePermission", Rbac.RolePermission.getDefaultInstance(),
-                             new String[]{"roleId", "permission"});
-
-    private final ProtoBufRelationalClient<Rbac.RolePermission> store;
+public class RelationalRolePermissionService extends ProtoBufAssociationService<Rbac.RolePermission>
+        implements RolePermissionService {
 
     public RelationalRolePermissionService(RelationalClient relationalClient) {
-        super(relationalClient);
-        this.store = ProtoBufRelationalClient.forFilter(relationalClient, "rolePermission",
-                                                       Rbac.RolePermission.getDefaultInstance(), "roleId");
+        super(relationalClient, "rolePermission", Rbac.RolePermission.getDefaultInstance(), "roleId", "permission");
+    }
+
+    @Override
+    protected Rbac.RolePermission mapRow(Row row) {
+        return Rbac.RolePermission.newBuilder()
+            .setEnterpriseId(row.getStr("enterpriseId"))
+            .setRoleId(row.getStr("roleId"))
+            .setPermission(row.getString("permission"))
+            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
+            .build();
     }
 
     @Override
     public CompletableFuture<Rbac.RolePermission> add(RequestContext rc, String roleId, String permission) {
-        Rbac.RolePermission rolePermission = Rbac.RolePermission.newBuilder()
-            .setEnterpriseId(rc.getAuthContext().getEnterpriseId())
+        Rbac.RolePermission rp = Rbac.RolePermission.newBuilder()
+            .setEnterpriseId(authEnterpriseId(rc))
             .setRoleId(roleId)
             .setPermission(permission)
             .build();
-        return relationalClient.query(dc(rc), STMT.insert(rolePermission))
-            .thenApply(rows -> toRolePermission(rows.get(0)));
+        return insert(rc, rp);
     }
 
     @Override
     public CompletableFuture<Void> remove(RequestContext rc, String roleId, String permission) {
         Rbac.RolePermission key = Rbac.RolePermission.newBuilder()
-            .setRoleId(roleId)
-            .setPermission(permission)
-            .build();
-        return relationalClient.execute(dc(rc), STMT.deleteByCompositeId(key)).thenAccept(n -> {});
+            .setRoleId(roleId).setPermission(permission).build();
+        return deleteByKey(rc, key);
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.RolePermission>> get(RequestContext rc, String roleId, String permission) {
         Rbac.RolePermission key = Rbac.RolePermission.newBuilder()
-            .setRoleId(roleId)
-            .setPermission(permission)
-            .build();
-        return relationalClient.query(dc(rc), STMT.selectByCompositeId(key))
-            .thenApply(rows -> rows.isEmpty() ? Optional.empty() : Optional.of(toRolePermission(rows.get(0))));
-    }
-
-    @Override
-    public CompletableFuture<List<Rbac.RolePermission>> select(RequestContext rc, FilterCriteria filter) {
-        return store.findAll(dc(rc), filter);
+            .setRoleId(roleId).setPermission(permission).build();
+        return getByKey(rc, key);
     }
 
     @Override
@@ -104,14 +93,5 @@ public class RelationalRolePermissionService extends AbstractRbacService impleme
             ORDER BY rp.permission
             """, uid, uid, uid, authEnterpriseId(rc))
             .thenApply(rows -> rows.stream().map(r -> r.getString("permission")).toList());
-    }
-
-    private static Rbac.RolePermission toRolePermission(Row row) {
-        return Rbac.RolePermission.newBuilder()
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setRoleId(row.getStr("roleId"))
-            .setPermission(row.getString("permission"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
-            .build();
     }
 }
