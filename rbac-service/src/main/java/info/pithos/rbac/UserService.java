@@ -23,4 +23,7 @@ public interface UserService {
 
     /** Returns non-deleted users who are members of {@code groupId}, ordered by email. */
     CompletableFuture<List<Rbac.User>> getUsersInGroup(RequestContext rc, String groupId);
+
+    /** Finds a non-deleted user by IdP subject within {@code authContext.enterpriseId}. */
+    CompletableFuture<Optional<Rbac.User>> findByExternalId(RequestContext rc, String externalId);
 }

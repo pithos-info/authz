@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+
 public class RelationalUserService extends AbstractRbacService implements UserService {
 
     private final ProtoBufRelationalClient<Rbac.User> store;
@@ -47,6 +48,14 @@ public class RelationalUserService extends AbstractRbacService implements UserSe
         String sql = "SELECT " + store.statement().columnList()
             + " FROM \"user\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY \"utcCreatedAt\"";
         return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
+    }
+
+    @Override
+    public CompletableFuture<Optional<Rbac.User>> findByExternalId(RequestContext rc, String externalId) {
+        String sql = "SELECT " + store.statement().columnList()
+            + " FROM \"user\" WHERE \"enterpriseId\" = ? AND \"externalId\" = ? AND deleted = false";
+        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc), externalId}))
+            .thenApply(users -> users.isEmpty() ? Optional.empty() : Optional.of(users.get(0)));
     }
 
     @Override

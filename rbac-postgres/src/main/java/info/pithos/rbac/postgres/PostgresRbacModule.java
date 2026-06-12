@@ -46,11 +46,11 @@ public final class PostgresRbacModule extends RbacServiceModule {
             this.cacheClient      = new RedisCacheClient(this.getApplicationContext());
             AsyncTaskQueue taskQueue = this.getApplicationContext().getSystemContext().getTaskQueue();
 
-            this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue);
+            this.userRoleService        = new RelationalUserRoleService(this.relationalClient);
+            this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue, this.userRoleService);
             this.userService            = new RelationalUserService(this.relationalClient);
             this.groupService           = new RelationalGroupService(this.relationalClient, this.cacheClient, taskQueue);
             this.groupMemberService     = new RelationalGroupMemberService(this.relationalClient);
-            this.userRoleService        = new RelationalUserRoleService(this.relationalClient);
             this.groupRoleService       = new RelationalGroupRoleService(this.relationalClient);
             this.rolePermissionService  = new RelationalRolePermissionService(this.relationalClient);
             this.roleService            = new RelationalRoleService(this.relationalClient, this.cacheClient, taskQueue);

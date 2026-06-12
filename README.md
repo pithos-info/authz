@@ -94,6 +94,19 @@ Foreign keys use `ON DELETE RESTRICT`. Cascading deletes at the DB level are unp
 
 ## Service design
 
+### Authorization
+
+`RelationalEnterpriseService` enforces a system-tenant admin guard on all mutating and listing operations (`create`, `update`, `delete`, `list`):
+
+1. `authEnterpriseId(rc)` must equal `"1"` (the system enterprise) → `403 FORBIDDEN` otherwise
+2. `UserRoleService.hasRole(rc, "1")` — caller must hold the admin role (id `"1"`) in the system enterprise → `403 FORBIDDEN` otherwise
+
+`get` is intentionally left unguarded — any authenticated user can fetch an enterprise by ID.
+
+`UserRoleService` is constructed before `RelationalEnterpriseService` in both DB modules and injected via the constructor so the check can be applied within the service layer without touching handlers.
+
+---
+
 ### One service, one primary protobuf type
 
 Each service owns one protobuf message type and returns that type from all reads and writes:
@@ -108,7 +121,7 @@ Each service owns one protobuf message type and returns that type from all reads
 - `GroupRoleService` → `Rbac.GroupRole`
 - `RolePermissionService` → `Rbac.RolePermission`
 
-Cross-cutting reads (e.g. "users in a group") live in the service whose type is returned: `UserService.getUsersInGroup` returns `List<Rbac.User>`, `GroupService.getUserGroups` returns `List<Rbac.Group>`.
+Cross-cutting reads (e.g. "users in a group") live in the service whose type is returned: `UserService.getUsersInGroup` returns `List<Rbac.User>`, `GroupService.getUserGroups` returns `List<Rbac.Group>`, `UserService.findByExternalId` returns `Optional<Rbac.User>` (used by auth to resolve IdP subject → RBAC user).
 
 ### Entity services (`ProtoBufRelationalClient`)
 
@@ -267,11 +280,23 @@ Entity services pass `RelationalClient` to `super()` (required by the constructo
 
 ### OAuth (human users)
 
-Human users authenticate via an IdP (Google, Okta, Keycloak, etc.). The `User` record stores `externalId` (the IdP subject) and `idpProvider`. No passwords are stored in RBAC.
+Human users authenticate via an IdP (Google, Firebase, Keycloak, etc.). The `User` record stores `externalId` (the IdP subject — Google `sub` claim, Firebase `sub`, etc.) and `idpProvider`. No passwords are stored in RBAC.
 
-`POST /auth/login` with `{"username":"...","password":"..."}` exchanges credentials through `KeycloakOAuthClient` and returns a short-lived access token + refresh token.
+`POST /auth/login` with `{"idToken":"<google-or-firebase-id-token>"}` validates the token through `GcpIdentityOAuthClient` and returns a short-lived access token. See [auth module docs](../../runtime/auth/README.md) for supported identity flows.
 
-Subsequent requests carry the token as `Authorization: Bearer <jwt>`. `BaseServiceHandler.handleHttp` calls `OAuthClient.introspectToken`, validates the token is active, and populates `RequestContext` with `userId` (from the token subject) and `enterpriseId` (from the `X-Enterprise-Id` header).
+Subsequent requests carry the token as `Authorization: Bearer <jwt>` plus `X-Enterprise-Id: <id>`. The full auth chain for every non-login request:
+
+1. `BaseServiceHandler` — no Bearer token → `401`
+2. Token introspection via `OAuthClient.introspectToken` — inactive or blank subject → `401`
+3. **`RbacUserContextResolver`** (installed in `RbacAppModule`):
+   - Verifies the enterprise (from `X-Enterprise-Id`) exists
+   - Looks up the user by `externalId = token.sub` within that enterprise (`UserService.findByExternalId`)
+   - Not found → `401`
+   - Found → replaces the IdP subject in `RequestContext.authContext.userId` with the RBAC user ID
+
+All downstream role and permission checks use the RBAC user ID, not the IdP subject.
+
+**Seed data note:** the bootstrap user record has `externalId = 'pending:shilpa@geekrox.com'` as a placeholder. Update it to the actual Google `sub` claim (visible in any decoded ID token at the `sub` field) before testing authenticated endpoints.
 
 ### API keys (headless / programmatic access)
 
@@ -408,7 +433,9 @@ Phase 3 — grpcServer.start(); httpServer.start() — accept traffic
 // init() — pure construction
 this.relationalClient = new PostgresClient(this.getApplicationContext());
 this.cacheClient      = new RedisCacheClient(this.getApplicationContext());
-this.enterpriseService = new RelationalEnterpriseService(relationalClient, cacheClient, taskQueue);
+// userRoleService constructed first — EnterpriseService depends on it for system-admin checks
+this.userRoleService   = new RelationalUserRoleService(relationalClient);
+this.enterpriseService = new RelationalEnterpriseService(relationalClient, cacheClient, taskQueue, userRoleService);
 // ... all other services
 
 // start() — ordered: DB pool → Liquibase → cache pool
