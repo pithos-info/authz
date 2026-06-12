@@ -123,117 +123,131 @@ Each service owns one protobuf message type and returns that type from all reads
 
 Cross-cutting reads (e.g. "users in a group") live in the service whose type is returned: `UserService.getUsersInGroup` returns `List<Rbac.User>`, `GroupService.getUserGroups` returns `List<Rbac.Group>`, `UserService.findByExternalId` returns `Optional<Rbac.User>` (used by auth to resolve IdP subject → RBAC user).
 
-### Entity services (`ProtoBufRelationalClient`)
+### Entity services (`ProtoBufCrudService`)
 
-Entity services (single surrogate `id`) use `ProtoBufRelationalClient<M>` as their sole data-access field:
+Entity services extend `ProtoBufCrudService<T>`, which implements `CrudService<T>` and provides
+concrete `create`, `get`, `update`, `delete`. Subclasses only add domain-specific methods:
 
 ```java
-public class RelationalGroupService extends AbstractRbacService implements GroupService {
+// Interface — extends CrudService<T>; only domain methods declared here
+public interface GroupService extends CrudService<Rbac.Group> {
+    CompletableFuture<List<Rbac.Group>> list(RequestContext rc);
+    CompletableFuture<List<Rbac.Group>> getUserGroups(RequestContext rc);
+}
 
-    private final ProtoBufRelationalClient<Rbac.Group> store;
+// Implementation — constructor + domain methods only
+public class RelationalGroupService extends ProtoBufCrudService<Rbac.Group>
+        implements GroupService {
 
-    public RelationalGroupService(RelationalClient relationalClient) {
-        super(relationalClient);
-        this.store = ProtoBufRelationalClient.of(relationalClient,
-                                                 Rbac.Group.getDefaultInstance(), "deleted");
-    }
-
-    @Override
-    public CompletableFuture<Optional<Rbac.Group>> get(RequestContext rc, String id) {
-        return store.findById(dc(rc), id).thenApply(Optional::ofNullable);
+    public RelationalGroupService(RelationalClient rc,
+                                   DistributedCacheClient cache, AsyncTaskQueue queue) {
+        super(rc, cache, queue, Rbac.Group.getDefaultInstance(), "deleted");
     }
 
     @Override
     public CompletableFuture<List<Rbac.Group>> list(RequestContext rc) {
+        // deleted = false is appended automatically by the base class
+        return cachedList(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("name"));
+    }
+
+    @Override
+    public CompletableFuture<List<Rbac.Group>> getUserGroups(RequestContext rc) {
+        // Cross-table subquery must use PreparedQuery
         String sql = "SELECT " + store.statement().columnList()
-            + " FROM \"group\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
-        return store.findAll(dc(rc), new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
+            + " FROM \"group\""
+            + " WHERE id IN (SELECT \"groupId\" FROM \"groupMember\" WHERE \"userId\" = ?)"
+            + " AND \"enterpriseId\" = ? AND deleted = false ORDER BY name";
+        return query(rc, new PreparedQuery(sql, new Object[]{authUserId(rc), authEnterpriseId(rc)}));
     }
 }
 ```
 
 Key points:
-- `store.insert/update/softDelete/delete` for CRUD — no `Row` mapper needed; `ProtoBufRelationalClient` maps rows via field-name introspection.
-- `store.findAll(ctx, PreparedQuery)` for custom list/filter queries where `ORDER BY` is needed.
-- `store.findAll(ctx, FilterCriteria)` for ad-hoc predicate queries (no `ORDER BY`).
-- `store.statement().columnList()` to get the quoted column list for custom SQL.
-- `"deleted"` is passed to the factory as an excluded-from-write field — it is never set on INSERT or UPDATE SET.
+- `"deleted"` in the constructor's `excludeFromWrite` means it is never set on INSERT or UPDATE.
+- `deleted = false` is **automatically appended** to all `FilterCriteria`-based queries by `withActive()` in the base class — callers never write it explicitly.
+- Cross-table queries (subqueries, UNIONs) use `query(rc, PreparedQuery)` and carry explicit `deleted = false` in the SQL.
+- `create(rc, entity)` is the universal pattern — entity construction (including `id` and `enterpriseId`) happens at the handler layer; `ProtoBufStatement.insert()` auto-generates a UUID if `id` is unset.
 
-### Association services (`ProtoBufStatement` + `ProtoBufRelationalClient`)
+### Association services (`ProtoBufAssociationService`)
 
-Association tables have a composite PK and no `id` field. They use two fields:
+Association services extend `ProtoBufAssociationService<T>`, which implements `AssociationService<T>`
+and provides concrete `select(rc, FilterCriteria)`. No `mapRow` implementation needed — row mapping
+is automatic. Subclasses only add domain-named mutation methods:
 
 ```java
-public class RelationalGroupMemberService extends AbstractRbacService implements GroupMemberService {
+// Interface — extends AssociationService<T>; select(rc, FilterCriteria) inherited
+public interface GroupMemberService extends AssociationService<Rbac.GroupMember> {
+    CompletableFuture<Rbac.GroupMember> add(RequestContext rc, String groupId, String userId);
+    CompletableFuture<Void> remove(RequestContext rc, String groupId, String userId);
+    CompletableFuture<Optional<Rbac.GroupMember>> get(RequestContext rc, String groupId, String userId);
+    CompletableFuture<Boolean> isUserInGroup(RequestContext rc, String groupId);
+}
 
-    // Composite-key STMT for insert / delete / point-select
-    private static final ProtoBufStatement<Rbac.GroupMember> STMT =
-        ProtoBufStatement.of("groupMember", Rbac.GroupMember.getDefaultInstance(),
-                             new String[]{"groupId", "userId"});
-
-    // ProtoBufRelationalClient for FilterCriteria-based select
-    private final ProtoBufRelationalClient<Rbac.GroupMember> store;
+// Implementation — constructor + domain methods only; select is inherited
+public class RelationalGroupMemberService extends ProtoBufAssociationService<Rbac.GroupMember>
+        implements GroupMemberService {
 
     public RelationalGroupMemberService(RelationalClient relationalClient) {
-        super(relationalClient);
-        this.store = ProtoBufRelationalClient.of(relationalClient, "groupMember",
-                                                 Rbac.GroupMember.getDefaultInstance(), "groupId");
+        super(relationalClient, "groupMember", Rbac.GroupMember.getDefaultInstance(), "groupId", "userId");
     }
 
     @Override
     public CompletableFuture<Rbac.GroupMember> add(RequestContext rc, String groupId, String userId) {
-        Rbac.GroupMember member = Rbac.GroupMember.newBuilder()
-            .setGroupId(groupId).setUserId(userId)
-            .setUtcCreatedAt(System.currentTimeMillis()).build();
-        return relationalClient.query(dc(rc), STMT.insert(member))
-            .thenApply(rows -> toGroupMember(rows.get(0)));  // manual mapper needed here
+        return insert(rc, Rbac.GroupMember.newBuilder()
+            .setEnterpriseId(authEnterpriseId(rc))
+            .setGroupId(groupId).setUserId(userId).build());
     }
 
     @Override
     public CompletableFuture<Void> remove(RequestContext rc, String groupId, String userId) {
-        Rbac.GroupMember key = Rbac.GroupMember.newBuilder()
-            .setGroupId(groupId).setUserId(userId).build();
-        return relationalClient.execute(dc(rc), STMT.deleteByCompositeId(key)).thenAccept(n -> {});
+        return deleteByKey(rc, Rbac.GroupMember.newBuilder()
+            .setGroupId(groupId).setUserId(userId).build());
     }
 
     @Override
-    public CompletableFuture<List<Rbac.GroupMember>> select(RequestContext rc, FilterCriteria filter) {
-        return store.findAll(dc(rc), filter);  // automatic row mapping
+    public CompletableFuture<Optional<Rbac.GroupMember>> get(RequestContext rc, String groupId, String userId) {
+        return getByKey(rc, Rbac.GroupMember.newBuilder()
+            .setGroupId(groupId).setUserId(userId).build());
     }
+    // isUserInGroup uses relationalClient directly for a custom EXISTS query
 }
 ```
 
 Key points:
-- `ProtoBufStatement.of(table, proto, new String[]{"col1", "col2"})` — composite-key factory. Enables `insert`, `deleteByCompositeId`, `selectByCompositeId`.
-- `ProtoBufRelationalClient.of(client, table, proto, "firstKeyField")` — used only for `findAll(FilterCriteria)`. The `"firstKeyField"` satisfies the constructor but is never used for single-id lookups.
-- Manual `toXxx(Row)` mapper is still needed for `get` (uses `STMT.selectByCompositeId`) and `add` (uses `STMT.insert` which returns rows).
-- `select(RequestContext, FilterCriteria)` replaces all `listByX` methods — callers pass `FilterCriteria.eq("groupId", id)` etc.
+- Constructor varargs are the composite key fields in order (`"groupId", "userId"`).
+- `insert(rc, entity)` / `deleteByKey(rc, key)` / `getByKey(rc, key)` delegate to `ProtoBufStatement` for the SQL and `store.findAll` for automatic row mapping — no `mapRow` override.
+- `select(rc, FilterCriteria)` — callers pass e.g. `FilterCriteria.eq("groupId", id)`.
 
 ### `ProtoBufStatement` composite-key operations
 
-`ProtoBufStatement` built with `String[] compositeIdFields` gains three new methods:
+Built internally by `ProtoBufAssociationService` from the constructor varargs:
 
 ```java
-STMT.deleteByCompositeId(message)  // DELETE FROM table WHERE k1 = ? AND k2 = ?
-STMT.selectByCompositeId(message)  // SELECT cols FROM table WHERE k1 = ? AND k2 = ?
+stmt.insert(entity)              // INSERT INTO table (...) VALUES (...) RETURNING *
+stmt.deleteByCompositeId(key)    // DELETE FROM table WHERE k1 = ? AND k2 = ?
+stmt.selectByCompositeId(key)    // SELECT cols FROM table WHERE k1 = ? AND k2 = ?
 ```
 
-Values are extracted from the message fields using the same UUID/String/Timestamp type mapping as `insert`. A key-only message (fields set, `utcCreatedAt` zero) is sufficient for delete and select.
+A key-only message (composite key fields set, all others zero/empty) is sufficient for delete and select.
 
 ### `FilterCriteria` usage
 
 ```java
-// List all members of a group
+// Association service select — callers pass criteria; no deleted filter (association tables have none)
 groupMemberService.select(rc, FilterCriteria.eq("groupId", groupId))
-
-// List all roles assigned directly to a user
 userRoleService.select(rc, FilterCriteria.eq("userId", userId))
-
-// List all permissions for a role
 rolePermissionService.select(rc, FilterCriteria.eq("roleId", roleId))
+
+// Entity service list — deleted = false is appended automatically by ProtoBufCrudService
+query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("name"))
+cachedList(rc, FilterCriteria.none().orderBy("utcCreatedAt"))   // none() = no user condition
+
+// Entity service findBy — deleted = false auto-appended; no need to include it
+query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc))
+                        .and(FilterCriteria.eq("externalId", sub)))
 ```
 
-`FilterCriteria` supports `eq`, `neq`, `like`, `ilike`, `gt`, `gte`, `lt`, `lte` and logical `and`/`or` combinators. Field names are validated against the protobuf descriptor at call time. `*Id` fields are auto-converted to UUID; plain strings are passed as-is.
+`FilterCriteria` supports `eq`, `neq`, `like`, `ilike`, `gt`, `gte`, `lt`, `lte`, `and`, `or`, `orderBy`, and `none()`. Field names are validated against the protobuf descriptor at call time. `*Id` fields are auto-converted to UUID; plain strings are passed as-is. See the [relational-api README](../../runtime/data/relational-api/README.md) for the full API.
 
 ### Cross-cutting queries
 
@@ -253,26 +267,14 @@ Subqueries are preferred over JOINs for list queries when the outer table has co
 
 ---
 
-## `AbstractRbacService`
-
-All service impls extend `AbstractRbacService`, which provides three static helpers:
-
-```java
-protected static DataContext dc(RequestContext rc)
-protected static UUID authEnterpriseId(RequestContext rc)
-protected static UUID authUserId(RequestContext rc)
-```
-
-Entity services pass `RelationalClient` to `super()` (required by the constructor) but use `store` for all data access. Association services use `relationalClient` directly for composite-key operations and raw SQL.
-
 ---
 
 ## Soft delete vs hard delete
 
 - All entity tables have a `deleted BOOLEAN` column. `store.softDelete(ctx, id)` sets `deleted = true`.
-- `ApiKey` is hard-deleted on revoke (`store.delete`). No soft-delete column.
+- `ApiKey` is hard-deleted on revoke (`erase`). No soft-delete column on `ApiKey`.
 - Association tables (`groupMember`, `userRole`, `groupRole`, `rolePermission`) have no `deleted` column — rows are simply removed.
-- All `list` and cross-cutting queries filter `deleted = false` explicitly.
+- `ProtoBufCrudService` detects the `deleted` field at construction and automatically appends `AND deleted = false` to every `FilterCriteria`-based query. `PreparedQuery` paths (cross-table subqueries) carry `deleted = false` explicitly in their SQL.
 
 ---
 
