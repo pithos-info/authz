@@ -1,6 +1,7 @@
 package info.pithos.rbac.impl;
 
 import info.pithos.data.cache.DistributedCacheClient;
+import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.PreparedQuery;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufCrudService;
@@ -10,7 +11,6 @@ import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RelationalRoleService extends ProtoBufCrudService<Rbac.Role> implements RoleService {
@@ -22,30 +22,8 @@ public class RelationalRoleService extends ProtoBufCrudService<Rbac.Role> implem
     }
 
     @Override
-    public CompletableFuture<Rbac.Role> create(RequestContext rc, String name) {
-        Rbac.Role role = Rbac.Role.newBuilder()
-            .setId(UUID.randomUUID().toString())
-            .setEnterpriseId(authEnterpriseId(rc))
-            .setName(name)
-            .build();
-        return save(rc, role);
-    }
-
-    @Override
-    public CompletableFuture<Rbac.Role> update(RequestContext rc, Rbac.Role role) {
-        return merge(rc, role);
-    }
-
-    @Override
-    public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return remove(rc, id);
-    }
-
-    @Override
     public CompletableFuture<List<Rbac.Role>> list(RequestContext rc) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM role WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY name";
-        return cachedList(rc, new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
+        return cachedList(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("name"));
     }
 
     @Override

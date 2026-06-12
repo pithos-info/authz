@@ -1,6 +1,5 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.Row;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.rbac.RolePermissionService;
@@ -16,16 +15,6 @@ public class RelationalRolePermissionService extends ProtoBufAssociationService<
 
     public RelationalRolePermissionService(RelationalClient relationalClient) {
         super(relationalClient, "rolePermission", Rbac.RolePermission.getDefaultInstance(), "roleId", "permission");
-    }
-
-    @Override
-    protected Rbac.RolePermission mapRow(Row row) {
-        return Rbac.RolePermission.newBuilder()
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setRoleId(row.getStr("roleId"))
-            .setPermission(row.getString("permission"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
-            .build();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.PreparedQuery;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.data.relational.client.RelationalClient;
@@ -18,27 +19,20 @@ public class RelationalApiKeyService extends ProtoBufCrudService<Rbac.ApiKey> im
     }
 
     @Override
-    public CompletableFuture<Rbac.ApiKey> create(RequestContext rc, Rbac.ApiKey apiKey) {
-        return save(rc, apiKey);
-    }
-
-    @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String id) {
         return erase(rc, id);
     }
 
     @Override
     public CompletableFuture<List<Rbac.ApiKey>> list(RequestContext rc) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM \"apiKey\" WHERE \"enterpriseId\" = ? AND \"userId\" = ? ORDER BY \"utcCreatedAt\"";
-        return query(rc, new PreparedQuery(sql, new Object[]{authEnterpriseId(rc), authUserId(rc)}));
+        return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc))
+                                      .and(FilterCriteria.eq("userId", authUserId(rc)))
+                                      .orderBy("utcCreatedAt"));
     }
 
     @Override
     public CompletableFuture<Optional<Rbac.ApiKey>> findByKeyHash(RequestContext rc, String keyHash) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM \"apiKey\" WHERE \"keyHash\" = ?";
-        return query(rc, new PreparedQuery(sql, new Object[]{keyHash}))
+        return query(rc, FilterCriteria.eq("keyHash", keyHash))
             .thenApply(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)));
     }
 

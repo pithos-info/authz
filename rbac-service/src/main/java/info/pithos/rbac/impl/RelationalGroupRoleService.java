@@ -1,6 +1,5 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.Row;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
@@ -15,16 +14,6 @@ public class RelationalGroupRoleService extends ProtoBufAssociationService<Rbac.
 
     public RelationalGroupRoleService(RelationalClient relationalClient) {
         super(relationalClient, "groupRole", Rbac.GroupRole.getDefaultInstance(), "groupId", "roleId");
-    }
-
-    @Override
-    protected Rbac.GroupRole mapRow(Row row) {
-        return Rbac.GroupRole.newBuilder()
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setGroupId(row.getStr("groupId"))
-            .setRoleId(row.getStr("roleId"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"))
-            .build();
     }
 
     @Override

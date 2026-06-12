@@ -1,6 +1,5 @@
 package info.pithos.rbac.impl;
 
-import info.pithos.data.relational.Row;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.rbac.UserRoleService;
@@ -15,18 +14,6 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
 
     public RelationalUserRoleService(RelationalClient relationalClient) {
         super(relationalClient, "userRole", Rbac.UserRole.getDefaultInstance(), "userId", "roleId");
-    }
-
-    @Override
-    protected Rbac.UserRole mapRow(Row row) {
-        Rbac.UserRole.Builder b = Rbac.UserRole.newBuilder()
-            .setEnterpriseId(row.getStr("enterpriseId"))
-            .setUserId(row.getStr("userId"))
-            .setRoleId(row.getStr("roleId"))
-            .setUtcCreatedAt(row.getEpochMillis("utcCreatedAt"));
-        String grantedById = row.getStr("grantedById");
-        if (grantedById != null) b.setGrantedById(grantedById);
-        return b.build();
     }
 
     @Override

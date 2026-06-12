@@ -1,5 +1,6 @@
 package info.pithos.rbac.impl;
 
+import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.PreparedQuery;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufCrudService;
@@ -18,25 +19,8 @@ public class RelationalUserService extends ProtoBufCrudService<Rbac.User> implem
     }
 
     @Override
-    public CompletableFuture<Rbac.User> create(RequestContext rc, Rbac.User user) {
-        return save(rc, user);
-    }
-
-    @Override
-    public CompletableFuture<Rbac.User> update(RequestContext rc, Rbac.User user) {
-        return merge(rc, user);
-    }
-
-    @Override
-    public CompletableFuture<Void> delete(RequestContext rc, String id) {
-        return remove(rc, id);
-    }
-
-    @Override
     public CompletableFuture<List<Rbac.User>> list(RequestContext rc) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM \"user\" WHERE \"enterpriseId\" = ? AND deleted = false ORDER BY \"utcCreatedAt\"";
-        return query(rc, new PreparedQuery(sql, new Object[]{authEnterpriseId(rc)}));
+        return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("utcCreatedAt"));
     }
 
     @Override
@@ -51,9 +35,8 @@ public class RelationalUserService extends ProtoBufCrudService<Rbac.User> implem
 
     @Override
     public CompletableFuture<Optional<Rbac.User>> findByExternalId(RequestContext rc, String externalId) {
-        String sql = "SELECT " + store.statement().columnList()
-            + " FROM \"user\" WHERE \"enterpriseId\" = ? AND \"externalId\" = ? AND deleted = false";
-        return query(rc, new PreparedQuery(sql, new Object[]{authEnterpriseId(rc), externalId}))
+        return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc))
+                                      .and(FilterCriteria.eq("externalId", externalId)))
             .thenApply(users -> users.isEmpty() ? Optional.empty() : Optional.of(users.get(0)));
     }
 }
