@@ -15,6 +15,7 @@
         <module>rbac-postgres</module>
         <module>rbac-cloudsql</module>
         <module>rbac-app</module>
+        <module>rbac-mcp</module>
     </modules>
 
     <properties>
@@ -41,6 +42,11 @@
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
+                <groupId>info.pithos.rbac</groupId>
+                <artifactId>info-pithos-rbac-mcp</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
                 <groupId>info.pithos.service.container.core</groupId>
                 <artifactId>info-pithos-service-container-core</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
@@ -58,6 +64,11 @@
             <dependency>
                 <groupId>info.pithos.auth</groupId>
                 <artifactId>info-pithos-auth-keycloak</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>info.pithos.auth</groupId>
+                <artifactId>info-pithos-auth-gcp</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
