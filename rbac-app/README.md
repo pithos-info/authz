@@ -137,6 +137,6 @@ directly to `ConfigMap` proto field names and are parsed by the respective
 
 ## Adding a new entity
 
-Follow `Grpc-Rest-Api.md` at the project root. The checklist covers all seven
-touch-points: proto, handlers, gRPC service, REST resource, Guice bindings, gRPC
-server, and REST router.
+Follow `Grpc-Rest-Api.md` in the `service-container` runtime project. The checklist
+covers all seven touch-points: proto, handlers, gRPC service, REST resource, Guice
+bindings, gRPC server, and REST router.
