@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>info.pithos.rbac</groupId>
+        <artifactId>info-pithos-rbac</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>info-pithos-rbac-app</artifactId>
+
+    <properties>
+        <vertx.version>4.5.10</vertx.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
+        <log4j.version>2.24.3</log4j.version>
+        <mutiny.version>2.6.0</mutiny.version>
+        <app.main.class>info.pithos.rbac.app.RbacApp</app.main.class>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- jboss-logmanager pulls in 2.2.0; smallrye-config:3.9.1 requires >=2.4.0 -->
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-constraint</artifactId>
+                <version>2.6.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- RBAC modules -->
+        <dependency>
+            <groupId>info.pithos.rbac</groupId>
+            <artifactId>info-pithos-rbac-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>info.pithos.rbac</groupId>
+            <artifactId>info-pithos-rbac-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>info.pithos.rbac</groupId>
+            <artifactId>info-pithos-rbac-postgres</artifactId>
+        </dependency>
+
+        <!-- Service container (BaseServiceHandler, LoginHandler, AuthGrpcService) -->
+        <dependency>
+            <groupId>info.pithos.service.container.core</groupId>
+            <artifactId>info-pithos-service-container-core</artifactId>
+        </dependency>
+
+        <!-- Auth -->
+        <dependency>
+            <groupId>info.pithos.auth</groupId>
+            <artifactId>info-pithos-auth-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>info.pithos.auth</groupId>
+            <artifactId>info-pithos-auth-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>info.pithos.auth</groupId>
+            <artifactId>info-pithos-auth-gcp</artifactId>
+        </dependency>
+
+        <!-- Serde (proto ↔ JSON) -->
+        <dependency>
+            <groupId>info.pithos.serde</groupId>
+            <artifactId>info-pithos-serde</artifactId>
+        </dependency>
+
+        <!-- Vert.x Web (REST HTTP server) -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <!-- gRPC server (Netty shaded to avoid version conflicts with Vert.x Netty) -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+        </dependency>
+
+        <!-- Mutiny (Uni return type from handlers) -->
+        <dependency>
+            <groupId>io.smallrye.reactive</groupId>
+            <artifactId>mutiny</artifactId>
+            <version>${mutiny.version}</version>
+        </dependency>
+
+        <!-- Guice -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+        </dependency>
+
+        <!-- Vault (HashiCorp for local dev) -->
+        <dependency>
+            <groupId>info.pithos.vault</groupId>
+            <artifactId>info-pithos-vault-hashicorp</artifactId>
+        </dependency>
+
+        <!-- Blob storage (Minio for local dev) -->
+        <dependency>
+            <groupId>info.pithos.data.blob</groupId>
+            <artifactId>info-pithos-data-blob-minio</artifactId>
+        </dependency>
+
+        <!-- YAML config parsing -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- javax.annotation for gRPC generated stubs on Java 9+ -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${app.main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>rbac-app</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
