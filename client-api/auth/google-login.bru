@@ -1,0 +1,51 @@
+meta {
+  name: Google Login
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "idToken": "{{googleIdToken}}"
+  }
+}
+
+
+script:post-response {
+  var data = res.getBody();
+  if (res.getStatus() === 200 && data.accessToken) {
+    bru.setEnvVar("token", data.accessToken);
+  }
+}
+
+docs {
+  ## Google Identity Login
+  
+  Exchanges a Google ID token for a Pithos access token via `POST /auth/login`.
+  
+  ### Get a Google ID token
+  
+  **Local / developer machine (gcloud):**
+  ```bash
+  gcloud auth print-identity-token
+  ```
+  
+  **Service account (CI / headless):**
+  ```bash
+  gcloud auth print-identity-token --impersonate-service-account=<sa>@<project>.iam.gserviceaccount.com
+  ```
+  
+  Set the result as the `googleIdToken` environment variable in `environments/local.bru`, then run this request.
+  On success the returned `accessToken` is saved automatically to `{{token}}` so subsequent requests
+  in the collection pick it up without any manual copy-paste.
+}

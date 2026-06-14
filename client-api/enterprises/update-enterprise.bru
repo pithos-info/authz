@@ -1,0 +1,25 @@
+meta {
+  name: Update Enterprise
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/enterprises/{{enterpriseId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Acme Corp Updated"
+  }
+}

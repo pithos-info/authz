@@ -1,0 +1,15 @@
+meta {
+  name: Get My Groups
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/me/groups
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Update Group
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/groups/{{groupId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "engineering",
+    "description": "Engineering and platform team"
+  }
+}

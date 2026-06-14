@@ -1,0 +1,44 @@
+meta {
+  name: Google Get ID Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebaseApiKey}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{googleEmail}}",
+    "password": "{{googlePassword}}",
+    "returnSecureToken": true
+  }
+}
+
+script:post-response {
+  var data = res.getBody();
+  if (res.getStatus() === 200 && data.idToken) {
+    bru.setEnvVar("googleIdToken", data.idToken);
+  }
+}
+
+docs {
+  ## Get Google ID Token
+
+  Signs in a user via Google Identity Platform (Firebase Auth) and saves the
+  returned `idToken` to `{{googleIdToken}}`.
+
+  Set `firebaseApiKey`, `googleEmail`, and `googlePassword` in `environments/local.bru`
+  before running. The saved `{{googleIdToken}}` is consumed automatically by the
+  **Google Login** request that follows in the sequence.
+
+  Find your Firebase API key in the Firebase console under
+  Project Settings → General → Web API Key.
+}

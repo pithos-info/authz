@@ -1,0 +1,25 @@
+meta {
+  name: Assign Group Role
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/roles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "roleId": "{{roleId}}"
+  }
+}

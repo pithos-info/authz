@@ -1,0 +1,15 @@
+meta {
+  name: Get Users in Group
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/groups/{{groupId}}/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

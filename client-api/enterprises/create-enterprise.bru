@@ -1,0 +1,25 @@
+meta {
+  name: Create Enterprise
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/enterprises
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Acme Corp"
+  }
+}

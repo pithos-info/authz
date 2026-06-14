@@ -1,0 +1,25 @@
+meta {
+  name: List Enterprises
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/enterprises?
+  body: none
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjdiMDIxNjcxZWRlOTBlZTVhMzc1YzAyMmE1MjNkNDkwMTgxYTJjOWQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0MDY3MjIyMjE3OTktbWdzdHQ4dmlpaGlkazBkbGxoYTRmOTgwdjk0Z3I4c20uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0MDY3MjIyMjE3OTktbWdzdHQ4dmlpaGlkazBkbGxoYTRmOTgwdjk0Z3I4c20uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDQ4MTA5NTQ2ODU5NjAyNTA0NDUiLCJlbWFpbCI6ImV2ZXJnZXRpa2kuYWdvcmFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJHd2JlV1lGb1g1UzFOOV9jUnA4cDZ3IiwibmFtZSI6ImV2ZXJnZXRpa8OtIGFnb3JhIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0xXOWJheGlVNlItLUsxdk5pNnl4QmJDeWdnOTIyRmdvOUNtbzlqbHVLNllibEpmUT1zOTYtYyIsImdpdmVuX25hbWUiOiJldmVyZ2V0aWvDrSIsImZhbWlseV9uYW1lIjoiYWdvcmEiLCJpYXQiOjE3ODEyMjQyMzcsImV4cCI6MTc4MTIyNzgzN30.axKUy6VKPreDWt2IaSQYXfImD59UUWCtaf9b5cHd_8Bi2mVuUDYtkzzDwCC2BZA5fG5U0abpQaYnv-3tr3m3j3VrTRnTBYLxU7pbFBfVUsjUU72hDVcUakQHUe5YGiTp4rz0Fnt0e-cPjy2uGMq3dZ8YWb9A7suEtytW9l9kwixkYypLact_8M7XgKO1LDafuQcwE4Q0qQzZmdzGtCK7Ssll7mEPq5YSBMiVGKTHvKgMmumpGmAB_kvVv3lFuaE_RD4xE_dJSeIoB4Q8JncrWrtKojfBUGri0U-O1Z2eLVMxWSs1RAz81PUx7PBVBu_kIWXZN3Rc1a_aV9Xzwmr3rw
+  x-user-id: 1
+  x-enterprise-id: 1
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+vars:pre-request {
+  baseUrl: http://127.0.0.1:8080
+}

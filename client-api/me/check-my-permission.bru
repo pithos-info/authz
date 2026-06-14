@@ -1,0 +1,19 @@
+meta {
+  name: Check My Permission
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/me/permissions/check
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  permission: {{permission}}
+}

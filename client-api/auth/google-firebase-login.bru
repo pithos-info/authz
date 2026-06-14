@@ -1,0 +1,40 @@
+meta {
+  name: Google Firebase Login
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "idToken": "{{firebaseIdToken}}"
+  }
+}
+
+script:post-response {
+  var data = res.getBody();
+  if (res.getStatus() === 200 && data.accessToken) {
+    bru.setEnvVar("token", data.accessToken);
+  }
+}
+
+docs {
+  ## Google Firebase Login
+
+  Exchanges a Firebase ID token for a Pithos access token via `POST /auth/login`.
+  Run **Google Firebase Exchange** first to populate `{{firebaseIdToken}}`.
+
+  Note: Firebase ID tokens are issued by Firebase Auth
+  (`iss: https://securetoken.google.com/{project-id}`) rather than Google Accounts
+  directly. The RBAC service must be configured to validate Firebase tokens if this
+  differs from the current `GcpIdentityOAuthClient` tokeninfo path.
+}

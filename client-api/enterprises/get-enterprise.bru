@@ -1,0 +1,23 @@
+meta {
+  name: Get Enterprise
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/enterprises/{{enterpriseId}}?entepriseId="1"
+  body: none
+  auth: bearer
+}
+
+params:query {
+  entepriseId: "1"
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+vars:pre-request {
+  enterpriseId: 2
+}
