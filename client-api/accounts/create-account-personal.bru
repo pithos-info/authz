@@ -1,0 +1,32 @@
+meta {
+  name: Create Account (Personal)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Jane Doe",
+    "type": "PERSONAL",
+    "user": {
+      "email": "jane@example.com",
+      "externalId": "google-sub-12345",
+      "idpProvider": "google",
+      "displayName": "Jane Doe"
+    }
+  }
+}

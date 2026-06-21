@@ -331,3 +331,72 @@ service RolePermissionService {
   rpc HasPermission(CheckPermissionRequest) returns (Bool);
   rpc GetUserPermissions(Empty)           returns (PermissionList);
 }
+
+// ─── Account ──────────────────────────────────────────────────────────────────
+
+message CreateAccountRequest {
+  string                  name       = 1;  // account name
+  string                  type       = 2;  // PERSONAL | TEAM
+  CreateUserRequest       user       = 3;  // owner; user.enterpriseId is server-set — leave unset
+  CreateEnterpriseRequest enterprise = 4;  // required when type=TEAM; omit for PERSONAL
+}
+
+message UpdateAccountRequest {
+  string id   = 1;
+  string name = 2;
+}
+
+message Account {
+  string id            = 1;
+  string name          = 2;
+  string type          = 3;  // PERSONAL | TEAM
+  string enterpriseId  = 4;  // set when type=TEAM
+  int64  utcCreatedAt  = 5;
+  int64  utcModifiedAt = 6;
+  User   owner         = 7;  // the OWNER member; populated on Create and Get
+}
+
+message AccountList {
+  repeated Account accounts = 1;
+}
+
+service AccountService {
+  rpc Create(CreateAccountRequest)  returns (Account);
+  rpc Get(GetByIdRequest)           returns (Account);
+  rpc Update(UpdateAccountRequest)  returns (Account);
+  rpc Delete(DeleteByIdRequest)     returns (Empty);
+  rpc List(Empty)                   returns (AccountList);
+  rpc GetUserAccounts(Empty)        returns (AccountList);  // accounts the caller belongs to
+}
+
+// ─── AccountUser ──────────────────────────────────────────────────────────────
+
+message AddAccountUserRequest {
+  string accountId = 1;
+  string userId    = 2;
+  string role      = 3;  // OWNER | MEMBER; defaults to MEMBER if omitted
+}
+
+message RemoveAccountUserRequest {
+  string accountId = 1;
+  string userId    = 2;
+}
+
+message AccountUser {
+  string accountId    = 1;
+  string userId       = 2;
+  string role         = 3;  // OWNER | MEMBER
+  int64  utcCreatedAt = 4;
+  User   user         = 5;  // populated on Add and ListByAccount for display (name, email)
+}
+
+message AccountUserList {
+  repeated AccountUser members = 1;
+}
+
+service AccountUserService {
+  rpc Add(AddAccountUserRequest)       returns (AccountUser);
+  rpc Remove(RemoveAccountUserRequest) returns (Empty);
+  rpc ListByAccount(GetByIdRequest)    returns (AccountUserList);
+  rpc IsUserInAccount(GetByIdRequest)  returns (Bool);
+}

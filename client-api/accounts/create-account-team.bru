@@ -1,0 +1,37 @@
+meta {
+  name: Create Account (Team)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Acme Corp",
+    "type": "TEAM",
+    "user": {
+      "email": "admin@acme.com",
+      "externalId": "google-sub-67890",
+      "idpProvider": "google",
+      "displayName": "Acme Admin"
+    },
+    "enterprise": {
+      "slug": "acme-corp",
+      "name": "Acme Corp",
+      "domain": "acme.com"
+    }
+  }
+}

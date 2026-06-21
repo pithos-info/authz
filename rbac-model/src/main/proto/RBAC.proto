@@ -113,3 +113,23 @@ message RolePermission {
   string permission   = 3;
   int64  utcCreatedAt = 4; // epoch millis
 }
+
+// Account — unified tenant for consumer (PERSONAL) and SaaS (TEAM) apps
+message Account {
+  string id            = 1;
+  string name          = 2;
+  string type          = 3;  // PERSONAL | TEAM
+  string ownerId       = 4;  // userId of account owner; set when type=PERSONAL
+  string enterpriseId  = 5;  // references Enterprise; set when type=TEAM
+  int64  utcCreatedAt  = 6;  // epoch millis
+  int64  utcModifiedAt = 7;  // epoch millis
+  bool   deleted       = 8;
+}
+
+// Account membership — links a User to an Account with an explicit role
+message AccountUser {
+  string accountId    = 1;
+  string userId       = 2;
+  string role         = 3;  // OWNER | MEMBER
+  int64  utcCreatedAt = 4;  // epoch millis
+}
