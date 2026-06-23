@@ -1,0 +1,60 @@
+/*
+ * Copyright 2026 Pithos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+syntax = "proto3";
+
+package info.pithos.monetization.events;
+
+option java_package = "info.pithos.monetization.events";
+option java_outer_classname = "MonetizationEvents";
+
+import "Monetization.proto";
+
+// SOX-compliant event bus schema for journey lifecycle events.
+// Events are immutable after emission — no soft-delete, no update fields.
+// Every state-changing operation emits an event; there are no silent state changes.
+// Credit events are emitted by Ledger and defined in the Ledger proto.
+
+enum JourneyOperationType {
+  JOURNEY_OPERATION_TYPE_UNSPECIFIED = 0;
+  STARTED                            = 1;
+  CHECKPOINT                         = 2;
+  COMPLETED                          = 3;
+  FAILED                             = 4;
+  CANCELLED                          = 5;
+  UNAUTHORIZED                       = 6;
+}
+
+// ─── JourneyEvent ─────────────────────────────────────────────────────────────
+// Emitted at every journey lifecycle transition. Does not carry credit amounts,
+// billing details, or subscription information.
+// Flat event — all three catalog references (journeyId, workflowId, featureId) are
+// immutable and cacheable; consumers resolve each with a single cache lookup, no joins.
+
+message JourneyEvent {
+  string                                    eventId            = 1;
+  string                                    accountId          = 2;
+  string                                    userId             = 3;
+  string                                    journeyId          = 4;  // immutable; resolves journey version from cache
+  string                                    workflowId         = 5;  // immutable; resolves exact feature sequence from cache
+  string                                    featureId          = 6;  // immutable; resolves feature version from cache
+  info.pithos.monetization.model.DepthLevel depthLevel         = 7;
+  JourneyOperationType                      operationType      = 8;
+  string                                    journeyExecutionId = 9;  // spans multiple users, requests, and days
+  string                                    requestId          = 10; // RPC-level ID from RequestContext; scoped to one call
+  int64                                     utcCreatedAt       = 11; // epoch millis
+  int64                                     soxSequenceNumber  = 12; // monotonically increasing per account
+}

@@ -4,18 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>info.pithos.rbac</groupId>
-    <artifactId>info-pithos-rbac</artifactId>
+    <groupId>info.pithos.authz</groupId>
+    <artifactId>info-pithos-authz</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>rbac-model</module>
-        <module>rbac-service</module>
-        <module>rbac-postgres</module>
-        <module>rbac-cloudsql</module>
-        <module>rbac-app</module>
-        <module>rbac-mcp</module>
+        <module>rbac</module>
+        <module>monetization</module>
+        <module>authz-app</module>
+        <module>authz-mcp</module>
     </modules>
 
     <properties>
@@ -31,6 +29,7 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- RBAC modules -->
             <dependency>
                 <groupId>info.pithos.rbac</groupId>
                 <artifactId>info-pithos-rbac-model</artifactId>
@@ -38,14 +37,55 @@
             </dependency>
             <dependency>
                 <groupId>info.pithos.rbac</groupId>
-                <artifactId>info-pithos-rbac-app</artifactId>
+                <artifactId>info-pithos-rbac-service</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>info.pithos.rbac</groupId>
-                <artifactId>info-pithos-rbac-mcp</artifactId>
+                <artifactId>info-pithos-rbac-postgres</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
+            <dependency>
+                <groupId>info.pithos.rbac</groupId>
+                <artifactId>info-pithos-rbac-cloudsql</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- Monetization modules -->
+            <dependency>
+                <groupId>info.pithos.monetization</groupId>
+                <artifactId>info-pithos-monetization-model</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>info.pithos.monetization</groupId>
+                <artifactId>info-pithos-monetization-service</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>info.pithos.monetization</groupId>
+                <artifactId>info-pithos-monetization-postgres</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>info.pithos.monetization</groupId>
+                <artifactId>info-pithos-monetization-cloudsql</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- Authz deployment artifacts -->
+            <dependency>
+                <groupId>info.pithos.authz</groupId>
+                <artifactId>info-pithos-authz-app</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>info.pithos.authz</groupId>
+                <artifactId>info-pithos-authz-mcp</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- Platform -->
             <dependency>
                 <groupId>info.pithos.service.container.core</groupId>
                 <artifactId>info-pithos-service-container-core</artifactId>
@@ -97,21 +137,6 @@
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
-                <groupId>info.pithos.rbac</groupId>
-                <artifactId>info-pithos-rbac-service</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>info.pithos.rbac</groupId>
-                <artifactId>info-pithos-rbac-postgres</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>info.pithos.rbac</groupId>
-                <artifactId>info-pithos-rbac-cloudsql</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
                 <groupId>info.pithos.runtime.core</groupId>
                 <artifactId>pithos-runtime-core-model</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
@@ -121,6 +146,8 @@
                 <artifactId>pithos-runtime-core-context</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
+
+            <!-- Data layer -->
             <dependency>
                 <groupId>info.pithos.data.relational</groupId>
                 <artifactId>info-pithos-data-relational-api</artifactId>
@@ -151,6 +178,8 @@
                 <artifactId>info-pithos-data-cache-memorystore</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
+
+            <!-- External -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>

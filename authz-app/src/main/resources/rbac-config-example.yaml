@@ -1,0 +1,52 @@
+# RBAC service configuration
+#
+# Top-level keys other than `server` map directly to ConfigMap proto field names
+# (camelCase). Run with: java -Drbac.config=/path/to/config.yaml -jar rbac-app.jar
+
+server:
+  httpPort: 8080
+  grpcPort: 9090
+  bypassAuth: false   # set to true locally to skip token validation; send any Bearer token + X-User-Id / X-Enterprise-Id headers
+
+bootstrapConfigs:
+  serviceName: rbac-service
+  multiplier: 2            # thread-pool size = availableProcessors * multiplier
+
+postgresConfigs:
+  host: localhost
+  port: 5432
+  database: rbac_db
+  username: rbac
+  password: changeme
+  maxPoolSize: 10
+
+redisConfigs:
+  host: localhost
+  port: 6379
+  database: 0
+  timeoutMs: 5000
+  lockTtlSeconds: 5
+
+gcpIdentityOAuthConfigs:
+  projectId: your-firebase-project-id   # e.g. pithos-info-499118 (the hyphenated slug, not the number)
+
+keycloakOAuthConfigs:
+  serverUrl: http://localhost:8180
+  realm: pithos
+  clientId: rbac-service
+  clientSecret: changeme
+  timeoutMs: 5000
+
+hashiCorpVaultConfigs:
+  address: http://localhost:8200
+  token: dev-root-token
+  namespace: ""
+  mountPath: secret
+  timeoutMs: 5000
+
+minioBlobStorageConfigs:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: changeme
+  defaultBucket: rbac-assets
+  useSsl: false

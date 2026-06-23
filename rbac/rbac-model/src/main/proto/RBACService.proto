@@ -1,0 +1,402 @@
+/*
+ * Copyright 2026 Pithos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+syntax = "proto3";
+
+package info.pithos.rbac.service;
+
+option java_package = "info.pithos.rbac.service";
+option java_outer_classname = "RbacServiceApi";
+option java_multiple_files = true;
+
+// ─── Common primitives ────────────────────────────────────────────────────────
+
+message Empty {}
+
+message Bool { bool value = 1; }
+
+message GetByIdRequest { string id = 1; }
+
+message DeleteByIdRequest { string id = 1; }
+
+// ─── Enterprise ───────────────────────────────────────────────────────────────
+
+message CreateEnterpriseRequest {
+  string slug   = 1;  // unique URL-safe identifier, e.g. "acme-corp"
+  string name   = 2;
+  string domain = 3;  // primary domain, e.g. "acme.com"
+}
+
+message UpdateEnterpriseRequest {
+  string id     = 1;
+  string name   = 2;
+  string domain = 3;
+}
+
+message Enterprise {
+  string id            = 1;
+  string slug          = 2;
+  string name          = 3;
+  string domain        = 4;
+  int64  utcCreatedAt  = 5;
+  int64  utcModifiedAt = 6;
+  repeated Group groups = 7;  // all groups in this enterprise, each carrying their assigned roles
+  repeated Role  roles  = 8;  // all roles in this enterprise, each carrying their permissions
+}
+
+message EnterpriseList {
+  repeated Enterprise enterprises = 1;
+}
+
+service EnterpriseService {
+  rpc Create(CreateEnterpriseRequest) returns (Enterprise);
+  rpc Get(GetByIdRequest)             returns (Enterprise);
+  rpc Update(UpdateEnterpriseRequest) returns (Enterprise);
+  rpc Delete(DeleteByIdRequest)       returns (Empty);
+  rpc List(Empty)                     returns (EnterpriseList);
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+message CreateUserRequest {
+  string enterpriseId = 1;
+  string email        = 2;
+  string externalId   = 3;  // IdP subject
+  string idpProvider  = 4;  // google | okta | azure | keycloak
+  string displayName  = 5;
+}
+
+message UpdateUserRequest {
+  string id          = 1;
+  string displayName = 2;
+}
+
+message User {
+  string id            = 1;
+  string enterpriseId  = 2;
+  string email         = 3;
+  string displayName   = 4;
+  int64  lastLoginAt   = 5;
+  int64  utcCreatedAt  = 6;
+  int64  utcModifiedAt = 7;
+  repeated Group groups = 8;  // groups this user belongs to, each carrying their assigned roles
+  repeated Role  roles  = 9;  // effective roles (direct + via groups), each carrying their permissions
+}
+
+message UserList {
+  repeated User users = 1;
+}
+
+service UserService {
+  rpc Create(CreateUserRequest)       returns (User);
+  rpc Get(GetByIdRequest)             returns (User);
+  rpc Update(UpdateUserRequest)       returns (User);
+  rpc Delete(DeleteByIdRequest)       returns (Empty);
+  rpc List(Empty)                     returns (UserList);
+  rpc GetUsersInGroup(GetByIdRequest) returns (UserList);
+}
+
+// ─── Group ────────────────────────────────────────────────────────────────────
+
+message CreateGroupRequest {
+  string name = 1;
+}
+
+message UpdateGroupRequest {
+  string id   = 1;
+  string name = 2;
+}
+
+message Group {
+  string id            = 1;
+  string enterpriseId  = 2;
+  string name          = 3;
+  int64  utcCreatedAt  = 4;
+  int64  utcModifiedAt = 5;
+  repeated Role roles  = 6;  // roles assigned to this group, each carrying their permissions
+}
+
+message GroupList {
+  repeated Group groups = 1;
+}
+
+service GroupService {
+  rpc Create(CreateGroupRequest)  returns (Group);
+  rpc Get(GetByIdRequest)         returns (Group);
+  rpc Update(UpdateGroupRequest)  returns (Group);
+  rpc Delete(DeleteByIdRequest)   returns (Empty);
+  rpc List(Empty)                 returns (GroupList);
+  rpc GetUserGroups(Empty)        returns (GroupList);
+}
+
+// ─── Role ─────────────────────────────────────────────────────────────────────
+
+message CreateRoleRequest {
+  string name = 1;
+}
+
+message UpdateRoleRequest {
+  string id   = 1;
+  string name = 2;
+}
+
+message Role {
+  string id                   = 1;
+  string enterpriseId         = 2;
+  string name                 = 3;
+  int64  utcCreatedAt         = 4;
+  int64  utcModifiedAt        = 5;
+  repeated string permissions = 6;  // permission strings, e.g. "agents:run", "agents:create"
+}
+
+message RoleList {
+  repeated Role roles = 1;
+}
+
+service RoleService {
+  rpc Create(CreateRoleRequest)  returns (Role);
+  rpc Get(GetByIdRequest)        returns (Role);
+  rpc Update(UpdateRoleRequest)  returns (Role);
+  rpc Delete(DeleteByIdRequest)  returns (Empty);
+  rpc List(Empty)                returns (RoleList);
+  rpc GetUserRoles(Empty)        returns (RoleList);
+}
+
+// ─── ApiKey ───────────────────────────────────────────────────────────────────
+
+message CreateApiKeyRequest {
+  string          userId      = 1;
+  string          name        = 2;
+  repeated string permissions = 3;  // explicit subset of the user's permissions
+  int64           expiresAt   = 4;  // epoch millis; 0 = no expiry
+}
+
+message ApiKey {
+  string          id           = 1;
+  string          enterpriseId = 2;
+  string          userId       = 3;
+  string          name         = 4;
+  string          keyPrefix    = 5;  // first 12 chars for display; full key never returned
+  repeated string permissions  = 6;
+  int64           expiresAt    = 7;
+  int64           lastUsedAt   = 8;
+  int64           utcCreatedAt = 9;
+}
+
+message ApiKeyList {
+  repeated ApiKey apiKeys = 1;
+}
+
+service ApiKeyService {
+  rpc Create(CreateApiKeyRequest) returns (ApiKey);
+  rpc Get(GetByIdRequest)         returns (ApiKey);
+  rpc Revoke(DeleteByIdRequest)   returns (Empty);
+  rpc List(Empty)                 returns (ApiKeyList);
+}
+
+// ─── GroupMember ──────────────────────────────────────────────────────────────
+
+message AddGroupMemberRequest {
+  string groupId = 1;
+  string userId  = 2;
+}
+
+message RemoveGroupMemberRequest {
+  string groupId = 1;
+  string userId  = 2;
+}
+
+message GroupMember {
+  string groupId      = 1;
+  string userId       = 2;
+  int64  utcCreatedAt = 3;
+}
+
+message GroupMemberList {
+  repeated GroupMember members = 1;
+}
+
+service GroupMemberService {
+  rpc Add(AddGroupMemberRequest)        returns (GroupMember);
+  rpc Remove(RemoveGroupMemberRequest)  returns (Empty);
+  rpc ListByGroup(GetByIdRequest)       returns (GroupMemberList);
+  rpc IsUserInGroup(GetByIdRequest)     returns (Bool);
+}
+
+// ─── UserRole ─────────────────────────────────────────────────────────────────
+
+message GrantUserRoleRequest {
+  string userId = 1;
+  string roleId = 2;
+}
+
+message RevokeUserRoleRequest {
+  string userId = 1;
+  string roleId = 2;
+}
+
+message UserRole {
+  string userId       = 1;
+  string roleId       = 2;
+  string grantedById  = 3;
+  int64  utcCreatedAt = 4;
+}
+
+message UserRoleList {
+  repeated UserRole userRoles = 1;
+}
+
+service UserRoleService {
+  rpc Grant(GrantUserRoleRequest)    returns (UserRole);
+  rpc Revoke(RevokeUserRoleRequest)  returns (Empty);
+  rpc ListByUser(GetByIdRequest)     returns (UserRoleList);
+  rpc HasRole(GetByIdRequest)        returns (Bool);
+}
+
+// ─── GroupRole ────────────────────────────────────────────────────────────────
+
+message AssignGroupRoleRequest {
+  string groupId = 1;
+  string roleId  = 2;
+}
+
+message UnassignGroupRoleRequest {
+  string groupId = 1;
+  string roleId  = 2;
+}
+
+message GroupRole {
+  string groupId      = 1;
+  string roleId       = 2;
+  int64  utcCreatedAt = 3;
+}
+
+message GroupRoleList {
+  repeated GroupRole groupRoles = 1;
+}
+
+service GroupRoleService {
+  rpc Assign(AssignGroupRoleRequest)      returns (GroupRole);
+  rpc Unassign(UnassignGroupRoleRequest)  returns (Empty);
+  rpc ListByGroup(GetByIdRequest)         returns (GroupRoleList);
+}
+
+// ─── RolePermission ───────────────────────────────────────────────────────────
+
+message AddRolePermissionRequest {
+  string roleId     = 1;
+  string permission = 2;
+}
+
+message RemoveRolePermissionRequest {
+  string roleId     = 1;
+  string permission = 2;
+}
+
+message RolePermission {
+  string roleId       = 1;
+  string permission   = 2;
+  int64  utcCreatedAt = 3;
+}
+
+message RolePermissionList {
+  repeated RolePermission permissions = 1;
+}
+
+message PermissionList {
+  repeated string permissions = 1;
+}
+
+message CheckPermissionRequest {
+  string permission = 1;
+}
+
+service RolePermissionService {
+  rpc Add(AddRolePermissionRequest)       returns (RolePermission);
+  rpc Remove(RemoveRolePermissionRequest) returns (Empty);
+  rpc ListByRole(GetByIdRequest)          returns (RolePermissionList);
+  rpc HasPermission(CheckPermissionRequest) returns (Bool);
+  rpc GetUserPermissions(Empty)           returns (PermissionList);
+}
+
+// ─── Account ──────────────────────────────────────────────────────────────────
+
+message CreateAccountRequest {
+  string                  name       = 1;  // account name
+  string                  type       = 2;  // PERSONAL | TEAM
+  CreateUserRequest       user       = 3;  // owner; user.enterpriseId is server-set — leave unset
+  CreateEnterpriseRequest enterprise = 4;  // required when type=TEAM; omit for PERSONAL
+}
+
+message UpdateAccountRequest {
+  string id   = 1;
+  string name = 2;
+}
+
+message Account {
+  string id            = 1;
+  string name          = 2;
+  string type          = 3;  // PERSONAL | TEAM
+  string enterpriseId  = 4;  // set when type=TEAM
+  int64  utcCreatedAt  = 5;
+  int64  utcModifiedAt = 6;
+  User   owner         = 7;  // the OWNER member; populated on Create and Get
+}
+
+message AccountList {
+  repeated Account accounts = 1;
+}
+
+service AccountService {
+  rpc Create(CreateAccountRequest)  returns (Account);
+  rpc Get(GetByIdRequest)           returns (Account);
+  rpc Update(UpdateAccountRequest)  returns (Account);
+  rpc Delete(DeleteByIdRequest)     returns (Empty);
+  rpc List(Empty)                   returns (AccountList);
+  rpc GetUserAccounts(Empty)        returns (AccountList);  // accounts the caller belongs to
+}
+
+// ─── AccountUser ──────────────────────────────────────────────────────────────
+
+message AddAccountUserRequest {
+  string accountId = 1;
+  string userId    = 2;
+  string role      = 3;  // OWNER | MEMBER; defaults to MEMBER if omitted
+}
+
+message RemoveAccountUserRequest {
+  string accountId = 1;
+  string userId    = 2;
+}
+
+message AccountUser {
+  string accountId    = 1;
+  string userId       = 2;
+  string role         = 3;  // OWNER | MEMBER
+  int64  utcCreatedAt = 4;
+  User   user         = 5;  // populated on Add and ListByAccount for display (name, email)
+}
+
+message AccountUserList {
+  repeated AccountUser members = 1;
+}
+
+service AccountUserService {
+  rpc Add(AddAccountUserRequest)       returns (AccountUser);
+  rpc Remove(RemoveAccountUserRequest) returns (Empty);
+  rpc ListByAccount(GetByIdRequest)    returns (AccountUserList);
+  rpc IsUserInAccount(GetByIdRequest)  returns (Bool);
+}

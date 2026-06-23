@@ -1,0 +1,119 @@
+/*
+ * Copyright 2026 Pithos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+syntax = "proto3";
+
+package info.pithos.monetization.model;
+
+option java_package = "info.pithos.monetization.model";
+option java_outer_classname = "Monetization";
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum DepthLevel {
+  DEPTH_LEVEL_UNSPECIFIED = 0;
+  PRE_BUILT               = 1;  // journey runs exactly as the platform ships it
+  CONFIGURABLE            = 2;  // user can change parameters within a pre-built journey
+  COMPOSABLE              = 3;  // user can chain journeys together
+  CUSTOM                  = 4;  // user can build net-new journeys from scratch
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+// Registration entry for an application built on Pithos.
+// Anchors the appId partition key used across the journey catalog.
+
+// Immutable. Changes create a new version — never update in place.
+message App {
+  string id           = 1;
+  string slug         = 2;  // URL-safe identifier, e.g. "kestrel"
+  string name         = 3;  // display name, e.g. "Kestrel"
+  string ownerId      = 4;  // userId of the registering principal
+  int32  version      = 5;  // increments on each new version; starts at 1
+  string parentAppId  = 6;  // id of the app this was derived from; empty for v1
+  int64  utcCreatedAt = 7;  // epoch millis
+  string createdBy    = 8;  // userId
+}
+
+// ─── Feature ──────────────────────────────────────────────────────────────────
+// Internal API capability unit. Tagged on every public endpoint.
+// Never user-facing — exists for entitlement enforcement, instrumentation,
+// workflow assembly, and PLG analytics.
+
+// Immutable. Changes create a new version — never update in place.
+// Credit cost and resource type classification live in Ledger's FeatureCreditRate.
+message Feature {
+  string id                      = 1;
+  string appId                   = 2;
+  string name                    = 3;  // dot-namespaced, e.g. "agent.run", "memory.search"
+  int32  richardsonMaturityLevel = 4;  // 0–3
+  int32  version                 = 5;  // increments on each new version; starts at 1
+  string parentFeatureId         = 6;  // id of the feature this was derived from; empty for v1
+  int64  utcCreatedAt            = 7;  // epoch millis
+  string createdBy               = 8;  // userId
+}
+
+// ─── Journey ──────────────────────────────────────────────────────────────────
+// User-facing business outcome unit. Expressed as a verb-noun pair.
+// Appears on the pricing page, onboarding flow, and usage dashboards.
+// Differentiated across tiers by quantity (runs per period) and depth.
+
+// Immutable. Changes create a new version — never update in place.
+// journeyId references in events are therefore stable, permanent snapshots.
+message Journey {
+  string id               = 1;
+  string appId            = 2;
+  string name             = 3;  // URL-safe verb-noun, e.g. "research-ticker"
+  string displayName      = 4;  // human-readable, e.g. "Research Ticker"
+  string description      = 5;
+  string goal             = 6;  // what the user is trying to accomplish
+  string outcomeStatement = 7;  // what they will have when the journey completes
+  int32  version          = 8;  // increments on each new version; starts at 1
+  string parentJourneyId  = 9;  // id of the journey this was derived from; empty for v1
+  int64  utcCreatedAt     = 10; // epoch millis
+  string createdBy        = 11; // userId
+}
+
+// ─── Workflow ─────────────────────────────────────────────────────────────────
+// Internal only. Implements a Journey at a specific depth level by assembling
+// an ordered sequence of Features. One Journey has one Workflow per depth level.
+// Users never configure or name Workflows.
+
+// Immutable. Changes create a new version — never update in place.
+// One workflow per journey per depth level. workflowId in events is a stable reference
+// to the exact feature sequence that ran.
+message Workflow {
+  string id               = 1;
+  string appId            = 2;
+  string journeyId        = 3;
+  DepthLevel depthLevel   = 4;
+  int32  version          = 5;  // increments on each new version; starts at 1
+  string parentWorkflowId = 6;  // id of the workflow this was derived from; empty for v1
+  int64  utcCreatedAt     = 7;  // epoch millis
+  string createdBy        = 8;  // userId
+}
+
+// ─── WorkflowFeature ──────────────────────────────────────────────────────────
+// Association: ordered step binding a Feature into a Workflow.
+
+message WorkflowFeature {
+  string appId        = 1;
+  string workflowId   = 2;
+  string featureId    = 3;
+  int32  stepOrder    = 4;  // execution order within the workflow
+  int64  utcCreatedAt = 5;  // epoch millis
+  string createdBy    = 6;  // userId
+}
+
