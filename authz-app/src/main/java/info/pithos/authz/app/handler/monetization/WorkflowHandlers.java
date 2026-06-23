@@ -1,0 +1,118 @@
+/*
+ * Copyright 2026 Pithos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+package info.pithos.authz.app.handler.monetization;
+
+import com.google.inject.Inject;
+import info.pithos.auth.OAuthClient;
+import info.pithos.monetization.model.Monetization;
+import info.pithos.monetization.service.CreateWorkflowRequest;
+import info.pithos.monetization.service.Empty;
+import info.pithos.monetization.service.GetByIdRequest;
+import info.pithos.monetization.service.Workflow;
+import info.pithos.monetization.service.WorkflowList;
+import info.pithos.monetization.service.WorkflowService;
+import info.pithos.runtime.core.context.ErrorCode;
+import info.pithos.runtime.core.context.ServiceException;
+import info.pithos.runtime.model.protocol.Context.RequestContext;
+import info.pithos.serde.ProtoBufMapper;
+import info.pithos.service.container.core.BaseServiceHandler;
+import io.smallrye.mutiny.Uni;
+
+public final class WorkflowHandlers {
+
+    private WorkflowHandlers() {}
+
+    public static final class Create extends BaseServiceHandler<CreateWorkflowRequest, Workflow> {
+        private final WorkflowService service;
+
+        @Inject
+        public Create(OAuthClient oAuthClient, WorkflowService service) {
+            super(oAuthClient);
+            this.service = service;
+        }
+
+        @Override
+        public Uni<Workflow> handle(CreateWorkflowRequest req, RequestContext rc) {
+            Monetization.Workflow data = Monetization.Workflow.newBuilder()
+                .setAppId(req.getAppId())
+                .setJourneyId(req.getJourneyId())
+                .setDepthLevelValue(req.getDepthLevel())
+                .setVersion(1)
+                .build();
+            return Uni.createFrom().completionStage(() -> service.create(rc, data))
+                .map(created -> ProtoBufMapper.map(created, Workflow.newBuilder()));
+        }
+    }
+
+    public static final class Get extends BaseServiceHandler<GetByIdRequest, Workflow> {
+        private final WorkflowService service;
+
+        @Inject
+        public Get(OAuthClient oAuthClient, WorkflowService service) {
+            super(oAuthClient);
+            this.service = service;
+        }
+
+        @Override
+        public Uni<Workflow> handle(GetByIdRequest req, RequestContext rc) {
+            return Uni.createFrom().completionStage(() -> service.get(rc, req.getId()))
+                .map(opt -> opt.map(d -> ProtoBufMapper.<Workflow>map(d, Workflow.newBuilder()))
+                    .orElseThrow(() -> new ServiceException(ErrorCode.NOT_FOUND,
+                        "Workflow not found: " + req.getId())));
+        }
+    }
+
+    public static final class ListByApp extends BaseServiceHandler<GetByIdRequest, WorkflowList> {
+        private final WorkflowService service;
+
+        @Inject
+        public ListByApp(OAuthClient oAuthClient, WorkflowService service) {
+            super(oAuthClient);
+            this.service = service;
+        }
+
+        @Override
+        public Uni<WorkflowList> handle(GetByIdRequest req, RequestContext rc) {
+            return Uni.createFrom().completionStage(() -> service.listByApp(rc, req.getId()))
+                .map(items -> WorkflowList.newBuilder()
+                    .addAllWorkflows(items.stream()
+                        .map(d -> ProtoBufMapper.<Workflow>map(d, Workflow.newBuilder()))
+                        .toList())
+                    .build());
+        }
+    }
+
+    public static final class ListByJourney extends BaseServiceHandler<GetByIdRequest, WorkflowList> {
+        private final WorkflowService service;
+
+        @Inject
+        public ListByJourney(OAuthClient oAuthClient, WorkflowService service) {
+            super(oAuthClient);
+            this.service = service;
+        }
+
+        @Override
+        public Uni<WorkflowList> handle(GetByIdRequest req, RequestContext rc) {
+            return Uni.createFrom().completionStage(() -> service.listByJourney(rc, req.getId()))
+                .map(items -> WorkflowList.newBuilder()
+                    .addAllWorkflows(items.stream()
+                        .map(d -> ProtoBufMapper.<Workflow>map(d, Workflow.newBuilder()))
+                        .toList())
+                    .build());
+        }
+    }
+}

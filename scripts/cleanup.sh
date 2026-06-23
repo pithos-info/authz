@@ -10,7 +10,7 @@ PG_USER="$(whoami)"
 PG_DB=rbac
 
 confirm() {
-    read -r -p "This will drop the rbac database. Are you sure? [y/N] " reply
+    read -r -p "This will drop the '$PG_DB' database (rbac + monetization schemas). Are you sure? [y/N] " reply
     [[ "$reply" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
 }
 
@@ -25,6 +25,6 @@ drop_database() {
 }
 
 confirm
-echo "Cleaning up rbac data model..."
+echo "Cleaning up authz data model (rbac + monetization)..."
 drop_database
 echo "Done. Run migrate.sh to recreate the schema."

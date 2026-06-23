@@ -1,0 +1,183 @@
+/*
+ * Copyright 2026 Pithos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+syntax = "proto3";
+
+package info.pithos.monetization.service;
+
+option java_package = "info.pithos.monetization.service";
+option java_outer_classname = "MonetizationServiceProto";
+option java_multiple_files = true;
+
+// ─── Shared types ─────────────────────────────────────────────────────────────
+
+message GetByIdRequest { string id = 1; }
+
+message Empty {}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+message CreateAppRequest {
+  string slug = 1;
+  string name = 2;
+}
+
+message App {
+  string id          = 1;
+  string slug        = 2;
+  string name        = 3;
+  string ownerId     = 4;
+  int32  version     = 5;
+  string parentAppId = 6;
+  int64  utcCreatedAt = 7;
+  string createdBy   = 8;
+}
+
+message AppList {
+  repeated App apps = 1;
+}
+
+service AppService {
+  rpc Create(CreateAppRequest) returns (App);
+  rpc Get(GetByIdRequest)      returns (App);
+  rpc List(Empty)              returns (AppList);
+}
+
+// ─── Feature ──────────────────────────────────────────────────────────────────
+
+message CreateFeatureRequest {
+  string appId                   = 1;
+  string name                    = 2;
+  int32  richardsonMaturityLevel = 3;
+}
+
+message Feature {
+  string id                      = 1;
+  string appId                   = 2;
+  string name                    = 3;
+  int32  richardsonMaturityLevel = 4;
+  int32  version                 = 5;
+  string parentFeatureId         = 6;
+  int64  utcCreatedAt            = 7;
+  string createdBy               = 8;
+}
+
+message FeatureList {
+  repeated Feature features = 1;
+}
+
+service FeatureService {
+  rpc Create(CreateFeatureRequest) returns (Feature);
+  rpc Get(GetByIdRequest)          returns (Feature);
+  rpc ListByApp(GetByIdRequest)    returns (FeatureList);
+}
+
+// ─── Journey ──────────────────────────────────────────────────────────────────
+
+message CreateJourneyRequest {
+  string appId            = 1;
+  string name             = 2;
+  string displayName      = 3;
+  string description      = 4;
+  string goal             = 5;
+  string outcomeStatement = 6;
+}
+
+message Journey {
+  string id               = 1;
+  string appId            = 2;
+  string name             = 3;
+  string displayName      = 4;
+  string description      = 5;
+  string goal             = 6;
+  string outcomeStatement = 7;
+  int32  version          = 8;
+  string parentJourneyId  = 9;
+  int64  utcCreatedAt     = 10;
+  string createdBy        = 11;
+}
+
+message JourneyList {
+  repeated Journey journeys = 1;
+}
+
+service JourneyService {
+  rpc Create(CreateJourneyRequest) returns (Journey);
+  rpc Get(GetByIdRequest)          returns (Journey);
+  rpc ListByApp(GetByIdRequest)    returns (JourneyList);
+}
+
+// ─── Workflow ─────────────────────────────────────────────────────────────────
+
+message CreateWorkflowRequest {
+  string appId      = 1;
+  string journeyId  = 2;
+  int32  depthLevel = 3;
+}
+
+message Workflow {
+  string id               = 1;
+  string appId            = 2;
+  string journeyId        = 3;
+  int32  depthLevel       = 4;
+  int32  version          = 5;
+  string parentWorkflowId = 6;
+  int64  utcCreatedAt     = 7;
+  string createdBy        = 8;
+}
+
+message WorkflowList {
+  repeated Workflow workflows = 1;
+}
+
+service WorkflowService {
+  rpc Create(CreateWorkflowRequest) returns (Workflow);
+  rpc Get(GetByIdRequest)           returns (Workflow);
+  rpc ListByApp(GetByIdRequest)     returns (WorkflowList);
+  rpc ListByJourney(GetByIdRequest) returns (WorkflowList);
+}
+
+// ─── WorkflowFeature ──────────────────────────────────────────────────────────
+
+message AddWorkflowFeatureRequest {
+  string workflowId = 1;
+  string featureId  = 2;
+  int32  stepOrder  = 3;
+}
+
+message RemoveWorkflowFeatureRequest {
+  string workflowId = 1;
+  string featureId  = 2;
+}
+
+message WorkflowFeature {
+  string appId        = 1;
+  string workflowId   = 2;
+  string featureId    = 3;
+  int32  stepOrder    = 4;
+  int64  utcCreatedAt = 5;
+  string createdBy    = 6;
+}
+
+message WorkflowFeatureList {
+  repeated WorkflowFeature workflowFeatures = 1;
+}
+
+service WorkflowFeatureService {
+  rpc Add(AddWorkflowFeatureRequest)          returns (WorkflowFeature);
+  rpc Remove(RemoveWorkflowFeatureRequest)    returns (Empty);
+  rpc ListByWorkflow(GetByIdRequest)          returns (WorkflowFeatureList);
+}

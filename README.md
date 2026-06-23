@@ -76,8 +76,8 @@ Phase 3 — grpcServer.start(); httpServer.start() — accept traffic
 
 | Profile | Modules |
 |---|---|
-| Local | `PostgresRbacModule`, `PostgresMonetizationModule`, `KeycloakOAuthModule`, `HashiCorpVaultModule`, `MinioBlobStorageModule`, `AuthzAppModule` |
-| GCP | `CloudSqlRbacModule`, `CloudSqlMonetizationModule`, `GcpIdentityOAuthModule`, `GcpSecretManagerModule`, `GcsBlobStorageModule`, `AuthzAppModule` |
+| Local | `PostgresRbacModule`, `PostgresMonetizationModule`, `BypassAuthModule` or `GcpIdentityOAuthModule`, `HashiCorpVaultModule`, `MinioBlobStorageModule`, `AuthZAppModule` |
+| GCP | `CloudSqlRbacModule`, `CloudSqlMonetizationModule`, `GcpIdentityOAuthModule`, `GcpSecretManagerModule`, `GcsBlobStorageModule`, `AuthZAppModule` |
 
 ### YAML config
 
@@ -634,9 +634,9 @@ Phase 3 — grpcServer.start(); httpServer.start() — accept traffic
 
 ### PostgresMonetizationModule / CloudSqlMonetizationModule
 
-`init()` constructs monetization service instances. `start()` chains: open DB pool (shared with RBAC or separate, depending on config) → run monetization Liquibase migrations → open cache pool.
+`init()` constructs monetization service instances. `start()` chains: open DB pool (shared database with RBAC) → run monetization Liquibase migrations inside a transaction.
 
-Liquibase runs inside a transaction — a failed migration rolls back cleanly.
+A failed migration rolls back cleanly. Monetization modules have no cache pool — catalog entities use the relational client directly.
 
 ---
 

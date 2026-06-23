@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RBAC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+AUTHZ_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 BREW_PREFIX="$(brew --prefix)"
 PG_BIN="$BREW_PREFIX/opt/postgresql@17/bin"
@@ -15,7 +15,8 @@ PG_DB=rbac
 VAULT_ADDR="http://127.0.0.1:8200"
 VAULT_TOKEN="dev-root-token"
 
-CHANGELOG_DIR="$RBAC_DIR/rbac-postgres/src/main/resources"
+RBAC_CHANGELOG_DIR="$AUTHZ_DIR/rbac/rbac-postgres/src/main/resources"
+MON_CHANGELOG_DIR="$AUTHZ_DIR/monetization/monetization-postgres/src/main/resources"
 CHANGELOG="db/changelog/postgres/db.changelog-master.xml"
 
 # ---- helpers ----------------------------------------------------------------
@@ -45,14 +46,16 @@ ensure_database() {
 }
 
 run_liquibase() {
-    echo "Running Liquibase migrations..."
+    local label="$1"
+    local changelog_dir="$2"
+    echo "Running Liquibase migrations ($label)..."
     liquibase \
         --url="jdbc:postgresql://$PG_HOST:$PG_PORT/$PG_DB" \
         --username="$PG_USER" \
-        --search-path="$CHANGELOG_DIR" \
+        --search-path="$changelog_dir" \
         --changelog-file="$CHANGELOG" \
         update
-    echo "  migrations: done"
+    echo "  $label migrations: done"
 }
 
 seed_vault() {
@@ -75,5 +78,6 @@ seed_vault() {
 
 wait_for_postgres
 ensure_database
-run_liquibase
+run_liquibase "rbac" "$RBAC_CHANGELOG_DIR"
+run_liquibase "monetization" "$MON_CHANGELOG_DIR"
 seed_vault

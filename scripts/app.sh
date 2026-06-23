@@ -2,25 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RBAC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+AUTHZ_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 INFRA_DIR="${INFRA_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/infra}"
 
 LOGS_DIR="$INFRA_DIR/local/logs"
 ARCHIVE_DIR="$LOGS_DIR/archive"
 PIDS_DIR="$INFRA_DIR/local/pids"
-CONFIG="$INFRA_DIR/local/configs/rbac-config.yaml"
-JAR="$RBAC_DIR/rbac-app/target/rbac-app.jar"
+CONFIG="$INFRA_DIR/local/configs/authz-config.yaml"
+JAR="$AUTHZ_DIR/authz-app/target/authz-app.jar"
 
 rotate_log() {
-    local log="$LOGS_DIR/rbac.log"
+    local log="$LOGS_DIR/authz.log"
     if [[ -f "$log" ]]; then
         mkdir -p "$ARCHIVE_DIR"
-        mv "$log" "$ARCHIVE_DIR/rbac-$(date +%Y%m%dT%H%M%S).log"
+        mv "$log" "$ARCHIVE_DIR/authz-$(date +%Y%m%dT%H%M%S).log"
     fi
 }
 
 is_running() {
-    local file="$PIDS_DIR/rbac.pid"
+    local file="$PIDS_DIR/authz.pid"
     [[ -f "$file" ]] && kill -0 "$(cat "$file")" 2>/dev/null
 }
 
@@ -30,45 +30,45 @@ start() {
         exit 1
     fi
     if is_running; then
-        echo "rbac: already running"
+        echo "authz: already running"
         return
     fi
     mkdir -p "$LOGS_DIR" "$PIDS_DIR"
     rotate_log
-    java -Drbac.config="$CONFIG" \
+    java -Dauthz.config="$CONFIG" \
         -jar "$JAR" \
-        > "$LOGS_DIR/rbac.log" 2>&1 &
-    echo $! > "$PIDS_DIR/rbac.pid"
-    echo "rbac: started (log: $LOGS_DIR/rbac.log)"
+        > "$LOGS_DIR/authz.log" 2>&1 &
+    echo $! > "$PIDS_DIR/authz.pid"
+    echo "authz: started (log: $LOGS_DIR/authz.log)"
 }
 
 stop() {
     if ! is_running; then
-        echo "rbac: not running"
-        rm -f "$PIDS_DIR/rbac.pid"
+        echo "authz: not running"
+        rm -f "$PIDS_DIR/authz.pid"
         return
     fi
     local pid
-    pid="$(cat "$PIDS_DIR/rbac.pid")"
+    pid="$(cat "$PIDS_DIR/authz.pid")"
     kill "$pid"
-    echo "rbac: waiting for graceful shutdown (pid $pid)..."
+    echo "authz: waiting for graceful shutdown (pid $pid)..."
     for i in $(seq 1 35); do
         if ! kill -0 "$pid" 2>/dev/null; then break; fi
         sleep 1
     done
     if kill -0 "$pid" 2>/dev/null; then
-        echo "rbac: timed out — force killing"
+        echo "authz: timed out — force killing"
         kill -9 "$pid"
     fi
-    rm -f "$PIDS_DIR/rbac.pid"
-    echo "rbac: stopped"
+    rm -f "$PIDS_DIR/authz.pid"
+    echo "authz: stopped"
 }
 
 status() {
     if is_running; then
-        echo "rbac: running (pid $(cat "$PIDS_DIR/rbac.pid"))"
+        echo "authz: running (pid $(cat "$PIDS_DIR/authz.pid"))"
     else
-        echo "rbac: stopped"
+        echo "authz: stopped"
     fi
 }
 

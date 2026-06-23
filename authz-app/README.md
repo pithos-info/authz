@@ -1,6 +1,6 @@
-# rbac-app
+# authz-app
 
-The runnable application module for the RBAC service. Wires all infrastructure clients,
+The runnable application module for the AuthZ service. Wires all infrastructure clients,
 Guice bindings, gRPC services, and REST resources into a single process that serves both
 protocols on separate ports.
 
@@ -8,51 +8,53 @@ protocols on separate ports.
 
 ## Startup sequence
 
-`RbacApp.main` drives a three-phase startup:
+`AuthZApp.main` drives a three-phase startup:
 
 ```
 Phase 1 — construct
-  RbacConfigLoader.load()         reads rbac-config.yaml → RbacBootstrapConfig
-  RbacContextCreator              supplies modules + ConfigMap to ApplicationContext
+  AuthZConfigLoader.load()        reads authz-config.yaml → AuthZBootstrapConfig
+  AuthZContextCreator             supplies modules + ConfigMap to ApplicationContext
   ApplicationContextImpl          builds the Guice injector from all modules (no I/O)
 
 Phase 2 — connect
   ApplicationContext.start()      each ServiceModule opens its infrastructure clients
                                   (Postgres pool, Redis, Vault, MinIO, auth client)
+                                  and runs Liquibase migrations in-process
 
 Phase 3 — serve
-  RbacGrpcServer.start()          binds gRPC port, registers services + interceptor
-  RbacHttpServer.start()          binds HTTP port, mounts all REST routes via Vert.x
+  AuthZGrpcServer.start()         binds gRPC port, registers services + interceptor
+  AuthZHttpServer.start()         binds HTTP port, mounts all REST routes via Vert.x
 ```
 
 Shutdown is symmetric: HTTP → gRPC → infrastructure clients → executor pools.
 
 ---
 
-## Module wiring (`RbacContextCreator`)
+## Module wiring (`AuthZContextCreator`)
 
-`RbacContextCreator` implements `ContextCreator` and returns the ordered list of
+`AuthZContextCreator` implements `ContextCreator` and returns the ordered list of
 `ServiceModule`s that form the Guice injector:
 
 | Module | Provides |
 |---|---|
-| `PostgresRbacModule` | `DataSource`, all `*Repository` / `*RelationalService` impls |
+| `PostgresRbacModule` | RBAC relational client + all RBAC service impls; runs RBAC Liquibase migrations |
+| `PostgresMonetizationModule` | Monetization relational client + all monetization service impls; runs monetization Liquibase migrations |
 | `GcpIdentityOAuthModule` *or* `BypassAuthModule` | `OAuthClient` binding (see Auth modes) |
 | `HashiCorpVaultModule` | `VaultClient` |
 | `MinioBlobStorageModule` | `BlobStorageClient` |
-| `RbacAppModule` | everything in the table below |
+| `AuthZAppModule` | everything in the table below |
 
 ---
 
-## Guice bindings (`RbacAppModule`)
+## Guice bindings (`AuthZAppModule`)
 
 All singletons. Grouped by layer:
 
 **Infrastructure / config**
-- `RbacServerConfig` — port values from YAML
+- `AuthZServerConfig` — port values from YAML
 
 **Servers and router**
-- `RbacHttpServer`, `RbacGrpcServer`, `RbacRestRouter`
+- `AuthZHttpServer`, `AuthZGrpcServer`, `AuthZRestRouter`
 
 **Auth**
 - `ApiKeyResolver` → `RbacApiKeyResolver` — looks up API keys by SHA-256 hash
@@ -60,10 +62,40 @@ All singletons. Grouped by layer:
 - `GrpcMetadataInterceptor` — stamps gRPC `Metadata` into the call `Context`
 - `LoginHandler`, `AuthGrpcService` — provided via `@Provides` from the bound `OAuthClient`
 
-**For each entity** (Enterprise, User, Group, Role, ApiKey, GroupMember, UserRole, GroupRole, RolePermission):
+**For each RBAC entity** (Enterprise, User, Group, Role, ApiKey, GroupMember, UserRole, GroupRole, RolePermission):
 - `*Resource` — REST route mounting
 - `*Handlers.{Op}` — one inner class per operation (Create, Get, Update, Delete, List, …)
 - `*GrpcService` — gRPC stub dispatch
+
+**For each monetization entity** (App, Feature, Journey, Workflow, WorkflowFeature):
+- `*Resource` — REST route mounting
+- `*Handlers.{Op}` — one inner class per operation
+- `*GrpcService` — gRPC stub dispatch
+
+---
+
+## Package layout
+
+```
+info.pithos.authz.app/
+  AuthZApp                        main entry point
+  AuthZAppModule                  Guice bindings
+  AuthZContextCreator             module list + ConfigMap
+  auth/                           ApiKeyResolver + UserContextResolver impls
+  config/                         AuthZBootstrapConfig, AuthZServerConfig, AuthZConfigLoader
+  server/                         AuthZGrpcServer, AuthZHttpServer
+  handler/
+    rbac/                         RBAC handler inner-class files
+    monetization/                 Monetization handler inner-class files
+  grpc/
+    rbac/                         RBAC gRPC service impls
+    monetization/                 Monetization gRPC service impls
+  rest/
+    AuthZRestRouter
+    resource/
+      rbac/                       RBAC REST resource classes
+      monetization/               Monetization REST resource classes
+```
 
 ---
 
@@ -120,7 +152,7 @@ X-User-Id: <external-id-of-existing-user>
 
 ---
 
-## Config (`rbac-config-example.yaml`)
+## Config (`authz-config-example.yaml`)
 
 ```
 server:
@@ -132,6 +164,11 @@ server:
 All other top-level keys (`postgresConfigs`, `gcpIdentityOAuthConfigs`, etc.) map
 directly to `ConfigMap` proto field names and are parsed by the respective
 `ServiceModule` during `init()`.
+
+Run with:
+```
+java -Dauthz.config=/path/to/authz-config.yaml -jar target/authz-app.jar
+```
 
 ---
 

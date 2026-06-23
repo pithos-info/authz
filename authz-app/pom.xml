@@ -17,7 +17,7 @@
         <snakeyaml.version>2.3</snakeyaml.version>
         <log4j.version>2.24.3</log4j.version>
         <mutiny.version>2.6.0</mutiny.version>
-        <app.main.class>info.pithos.rbac.app.RbacApp</app.main.class>
+        <app.main.class>info.pithos.authz.app.AuthZApp</app.main.class>
     </properties>
 
     <dependencyManagement>
