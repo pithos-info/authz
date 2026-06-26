@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.rbac.GroupService;
 import info.pithos.rbac.RolePermissionService;
@@ -46,8 +47,8 @@ public final class GroupHandlers {
         private final GroupService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, GroupService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -69,12 +70,12 @@ public final class GroupHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Get(OAuthClient oAuthClient,
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient,
                    GroupService          groupService,
                    GroupRoleService      groupRoleService,
                    RoleService           roleService,
                    RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.groupService     = groupService;
             this.groupRoleService = groupRoleService;
             this.roleService      = roleService;
@@ -97,8 +98,8 @@ public final class GroupHandlers {
         private final GroupService service;
 
         @Inject
-        public Update(OAuthClient oAuthClient, GroupService service) {
-            super(oAuthClient);
+        public Update(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -117,8 +118,8 @@ public final class GroupHandlers {
         private final GroupService service;
 
         @Inject
-        public Delete(OAuthClient oAuthClient, GroupService service) {
-            super(oAuthClient);
+        public Delete(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -133,8 +134,8 @@ public final class GroupHandlers {
         private final GroupService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, GroupService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -156,12 +157,12 @@ public final class GroupHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public GetUserGroups(OAuthClient oAuthClient,
+        public GetUserGroups(ApplicationContext applicationContext, OAuthClient oAuthClient,
                              GroupService          groupService,
                              GroupRoleService      groupRoleService,
                              RoleService           roleService,
                              RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.groupService     = groupService;
             this.groupRoleService = groupRoleService;
             this.roleService      = roleService;

@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.GroupMemberService;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.rbac.service.AddGroupMemberRequest;
@@ -41,8 +42,8 @@ public final class GroupMemberHandlers {
         private final GroupMemberService service;
 
         @Inject
-        public Add(OAuthClient oAuthClient, GroupMemberService service) {
-            super(oAuthClient);
+        public Add(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupMemberService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -58,8 +59,8 @@ public final class GroupMemberHandlers {
         private final GroupMemberService service;
 
         @Inject
-        public Remove(OAuthClient oAuthClient, GroupMemberService service) {
-            super(oAuthClient);
+        public Remove(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupMemberService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -75,8 +76,8 @@ public final class GroupMemberHandlers {
         private final GroupMemberService service;
 
         @Inject
-        public ListByGroup(OAuthClient oAuthClient, GroupMemberService service) {
-            super(oAuthClient);
+        public ListByGroup(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupMemberService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -97,8 +98,8 @@ public final class GroupMemberHandlers {
         private final GroupMemberService service;
 
         @Inject
-        public IsUserInGroup(OAuthClient oAuthClient, GroupMemberService service) {
-            super(oAuthClient);
+        public IsUserInGroup(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupMemberService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

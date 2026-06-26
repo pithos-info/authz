@@ -23,8 +23,8 @@ import info.pithos.rbac.mcp.tools.AccessManagementTools;
 import info.pithos.rbac.mcp.tools.AuthzTools;
 import info.pithos.rbac.mcp.tools.IdentityTools;
 import info.pithos.runtime.core.context.ServiceLifeCycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.model.protocol.Context.LogLevelType;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +45,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RbacMcpServer implements ServiceLifeCycle {
 
-    private static final Logger log = LoggerFactory.getLogger(RbacMcpServer.class);
-
+    private final ApplicationContext    applicationContext;
     private final McpAuthenticator      authenticator;
     private final AuthzTools            authzTools;
     private final IdentityTools         identityTools;
@@ -54,11 +53,13 @@ public class RbacMcpServer implements ServiceLifeCycle {
     private final UserContextResource   userContextResource;
 
     @Inject
-    public RbacMcpServer(McpAuthenticator authenticator,
+    public RbacMcpServer(ApplicationContext applicationContext,
+                          McpAuthenticator authenticator,
                           AuthzTools authzTools,
                           IdentityTools identityTools,
                           AccessManagementTools accessTools,
                           UserContextResource userContextResource) {
+        this.applicationContext  = applicationContext;
         this.authenticator       = authenticator;
         this.authzTools          = authzTools;
         this.identityTools       = identityTools;
@@ -68,7 +69,8 @@ public class RbacMcpServer implements ServiceLifeCycle {
 
     @Override
     public CompletableFuture<Boolean> start(long timeout, TimeUnit unit) {
-        log.info("Starting RBAC MCP server");
+        applicationContext.getSystemContext().getLogger()
+            .logRequest(null, RbacMcpServer.class, LogLevelType.INFO, "Starting RBAC MCP server");
         // TODO:
         //   McpServer server = McpServer.sync(transport)
         //       .serverInfo("rbac-mcp", "1.0.0")
@@ -76,13 +78,15 @@ public class RbacMcpServer implements ServiceLifeCycle {
         //       .resources(/* register userContextResource */)
         //       .build();
         //   server.start();
-        log.warn("RBAC MCP server is stubbed — transport not yet configured");
+        applicationContext.getSystemContext().getLogger()
+            .logRequest(null, RbacMcpServer.class, LogLevelType.WARN, "RBAC MCP server is stubbed — transport not yet configured");
         return CompletableFuture.completedFuture(true);
     }
 
     @Override
     public CompletableFuture<Boolean> shutdown(long timeout, TimeUnit unit) {
-        log.info("Stopping RBAC MCP server");
+        applicationContext.getSystemContext().getLogger()
+            .logRequest(null, RbacMcpServer.class, LogLevelType.INFO, "Stopping RBAC MCP server");
         // TODO: server.close();
         return CompletableFuture.completedFuture(true);
     }

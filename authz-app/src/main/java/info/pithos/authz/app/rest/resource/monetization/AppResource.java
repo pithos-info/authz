@@ -21,20 +21,23 @@ import info.pithos.monetization.service.CreateAppRequest;
 import com.google.protobuf.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.AppHandlers;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class AppResource {
+
+    private final RouteHelper routeHelper;
 
     private final AppHandlers.Create create;
     private final AppHandlers.Get    get;
     private final AppHandlers.List   list;
 
     @Inject
-    public AppResource(
+    public AppResource(RouteHelper routeHelper,
             AppHandlers.Create create,
             AppHandlers.Get    get,
             AppHandlers.List   list) {
+        this.routeHelper = routeHelper;
         this.create = create;
         this.get    = get;
         this.list   = list;
@@ -42,16 +45,16 @@ public final class AppResource {
 
     public void mount(Router r) {
         r.get("/apps").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, list, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, list, Empty.getDefaultInstance()));
 
         r.post("/apps").handler(ctx -> {
-            CreateAppRequest req = BaseServiceHandler.parseBody(ctx, CreateAppRequest.newBuilder());
+            CreateAppRequest req = routeHelper.parseBody(ctx, CreateAppRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/apps/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
     }
 }

@@ -22,10 +22,12 @@ import info.pithos.rbac.service.CreateApiKeyRequest;
 import info.pithos.rbac.service.DeleteByIdRequest;
 import info.pithos.rbac.service.Empty;
 import info.pithos.rbac.service.GetByIdRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class ApiKeyResource {
+
+    private final RouteHelper routeHelper;
 
     private final ApiKeyHandlers.Create create;
     private final ApiKeyHandlers.Get    get;
@@ -33,11 +35,12 @@ public final class ApiKeyResource {
     private final ApiKeyHandlers.List   list;
 
     @Inject
-    public ApiKeyResource(
+    public ApiKeyResource(RouteHelper routeHelper,
             ApiKeyHandlers.Create create,
             ApiKeyHandlers.Get    get,
             ApiKeyHandlers.Revoke revoke,
             ApiKeyHandlers.List   list) {
+        this.routeHelper = routeHelper;
         this.create = create;
         this.get    = get;
         this.revoke = revoke;
@@ -46,20 +49,20 @@ public final class ApiKeyResource {
 
     public void mount(Router r) {
         r.get("/apikeys").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, list, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, list, Empty.getDefaultInstance()));
 
         r.post("/apikeys").handler(ctx -> {
-            CreateApiKeyRequest req = BaseServiceHandler.parseBody(ctx, CreateApiKeyRequest.newBuilder());
+            CreateApiKeyRequest req = routeHelper.parseBody(ctx, CreateApiKeyRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/apikeys/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.delete("/apikeys/:id").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, revoke,
+            routeHelper.routeNoContent(ctx, revoke,
                 DeleteByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
     }
 }

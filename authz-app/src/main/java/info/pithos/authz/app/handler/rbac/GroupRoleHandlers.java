@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.rbac.service.AssignGroupRoleRequest;
@@ -40,8 +41,8 @@ public final class GroupRoleHandlers {
         private final GroupRoleService service;
 
         @Inject
-        public Assign(OAuthClient oAuthClient, GroupRoleService service) {
-            super(oAuthClient);
+        public Assign(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -57,8 +58,8 @@ public final class GroupRoleHandlers {
         private final GroupRoleService service;
 
         @Inject
-        public Unassign(OAuthClient oAuthClient, GroupRoleService service) {
-            super(oAuthClient);
+        public Unassign(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -74,8 +75,8 @@ public final class GroupRoleHandlers {
         private final GroupRoleService service;
 
         @Inject
-        public ListByGroup(OAuthClient oAuthClient, GroupRoleService service) {
-            super(oAuthClient);
+        public ListByGroup(ApplicationContext applicationContext, OAuthClient oAuthClient, GroupRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

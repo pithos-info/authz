@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.monetization;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.CreateJourneyRequest;
 
@@ -40,8 +41,8 @@ public final class JourneyHandlers {
         private final JourneyService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, JourneyService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, JourneyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -65,8 +66,8 @@ public final class JourneyHandlers {
         private final JourneyService service;
 
         @Inject
-        public Get(OAuthClient oAuthClient, JourneyService service) {
-            super(oAuthClient);
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient, JourneyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -83,8 +84,8 @@ public final class JourneyHandlers {
         private final JourneyService service;
 
         @Inject
-        public ListByApp(OAuthClient oAuthClient, JourneyService service) {
-            super(oAuthClient);
+        public ListByApp(ApplicationContext applicationContext, OAuthClient oAuthClient, JourneyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

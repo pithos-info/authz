@@ -21,20 +21,23 @@ import info.pithos.monetization.service.AddWorkflowFeatureRequest;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.monetization.service.RemoveWorkflowFeatureRequest;
 import info.pithos.authz.app.handler.monetization.WorkflowFeatureHandlers;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class WorkflowFeatureResource {
+
+    private final RouteHelper routeHelper;
 
     private final WorkflowFeatureHandlers.Add            add;
     private final WorkflowFeatureHandlers.Remove         remove;
     private final WorkflowFeatureHandlers.ListByWorkflow listByWorkflow;
 
     @Inject
-    public WorkflowFeatureResource(
+    public WorkflowFeatureResource(RouteHelper routeHelper,
             WorkflowFeatureHandlers.Add            add,
             WorkflowFeatureHandlers.Remove         remove,
             WorkflowFeatureHandlers.ListByWorkflow listByWorkflow) {
+        this.routeHelper = routeHelper;
         this.add            = add;
         this.remove         = remove;
         this.listByWorkflow = listByWorkflow;
@@ -42,18 +45,18 @@ public final class WorkflowFeatureResource {
 
     public void mount(Router r) {
         r.get("/workflows/:workflowId/features").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByWorkflow,
+            routeHelper.route(ctx, 200, listByWorkflow,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("workflowId")).build()));
 
         r.post("/workflows/:workflowId/features").handler(ctx -> {
-            AddWorkflowFeatureRequest req = BaseServiceHandler.parseBody(ctx, AddWorkflowFeatureRequest.newBuilder());
+            AddWorkflowFeatureRequest req = routeHelper.parseBody(ctx, AddWorkflowFeatureRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, add,
+            routeHelper.route(ctx, 201, add,
                 req.toBuilder().setWorkflowId(ctx.pathParam("workflowId")).build());
         });
 
         r.delete("/workflows/:workflowId/features/:featureId").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, remove,
+            routeHelper.routeNoContent(ctx, remove,
                 RemoveWorkflowFeatureRequest.newBuilder()
                     .setWorkflowId(ctx.pathParam("workflowId"))
                     .setFeatureId(ctx.pathParam("featureId"))

@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.monetization;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.App;
 import info.pithos.monetization.service.AppList;
@@ -40,8 +41,8 @@ public final class AppHandlers {
         private final AppService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, AppService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, AppService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -62,8 +63,8 @@ public final class AppHandlers {
         private final AppService service;
 
         @Inject
-        public Get(OAuthClient oAuthClient, AppService service) {
-            super(oAuthClient);
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient, AppService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -80,8 +81,8 @@ public final class AppHandlers {
         private final AppService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, AppService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, AppService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.rbac.UserRoleService;
 import info.pithos.rbac.service.Bool;
@@ -41,8 +42,8 @@ public final class UserRoleHandlers {
         private final UserRoleService service;
 
         @Inject
-        public Grant(OAuthClient oAuthClient, UserRoleService service) {
-            super(oAuthClient);
+        public Grant(ApplicationContext applicationContext, OAuthClient oAuthClient, UserRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -58,8 +59,8 @@ public final class UserRoleHandlers {
         private final UserRoleService service;
 
         @Inject
-        public Revoke(OAuthClient oAuthClient, UserRoleService service) {
-            super(oAuthClient);
+        public Revoke(ApplicationContext applicationContext, OAuthClient oAuthClient, UserRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -75,8 +76,8 @@ public final class UserRoleHandlers {
         private final UserRoleService service;
 
         @Inject
-        public ListByUser(OAuthClient oAuthClient, UserRoleService service) {
-            super(oAuthClient);
+        public ListByUser(ApplicationContext applicationContext, OAuthClient oAuthClient, UserRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -97,8 +98,8 @@ public final class UserRoleHandlers {
         private final UserRoleService service;
 
         @Inject
-        public HasRole(OAuthClient oAuthClient, UserRoleService service) {
-            super(oAuthClient);
+        public HasRole(ApplicationContext applicationContext, OAuthClient oAuthClient, UserRoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

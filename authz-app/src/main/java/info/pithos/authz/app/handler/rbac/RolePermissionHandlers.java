@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.service.AddRolePermissionRequest;
@@ -43,8 +44,8 @@ public final class RolePermissionHandlers {
         private final RolePermissionService service;
 
         @Inject
-        public Add(OAuthClient oAuthClient, RolePermissionService service) {
-            super(oAuthClient);
+        public Add(ApplicationContext applicationContext, OAuthClient oAuthClient, RolePermissionService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -60,8 +61,8 @@ public final class RolePermissionHandlers {
         private final RolePermissionService service;
 
         @Inject
-        public Remove(OAuthClient oAuthClient, RolePermissionService service) {
-            super(oAuthClient);
+        public Remove(ApplicationContext applicationContext, OAuthClient oAuthClient, RolePermissionService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -77,8 +78,8 @@ public final class RolePermissionHandlers {
         private final RolePermissionService service;
 
         @Inject
-        public ListByRole(OAuthClient oAuthClient, RolePermissionService service) {
-            super(oAuthClient);
+        public ListByRole(ApplicationContext applicationContext, OAuthClient oAuthClient, RolePermissionService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -99,8 +100,8 @@ public final class RolePermissionHandlers {
         private final RolePermissionService service;
 
         @Inject
-        public HasPermission(OAuthClient oAuthClient, RolePermissionService service) {
-            super(oAuthClient);
+        public HasPermission(ApplicationContext applicationContext, OAuthClient oAuthClient, RolePermissionService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -116,8 +117,8 @@ public final class RolePermissionHandlers {
         private final RolePermissionService service;
 
         @Inject
-        public GetUserPermissions(OAuthClient oAuthClient, RolePermissionService service) {
-            super(oAuthClient);
+        public GetUserPermissions(ApplicationContext applicationContext, OAuthClient oAuthClient, RolePermissionService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

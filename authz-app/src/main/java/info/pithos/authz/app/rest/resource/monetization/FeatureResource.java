@@ -20,20 +20,23 @@ import com.google.inject.Inject;
 import info.pithos.monetization.service.CreateFeatureRequest;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.FeatureHandlers;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class FeatureResource {
+
+    private final RouteHelper routeHelper;
 
     private final FeatureHandlers.Create    create;
     private final FeatureHandlers.Get       get;
     private final FeatureHandlers.ListByApp listByApp;
 
     @Inject
-    public FeatureResource(
+    public FeatureResource(RouteHelper routeHelper,
             FeatureHandlers.Create    create,
             FeatureHandlers.Get       get,
             FeatureHandlers.ListByApp listByApp) {
+        this.routeHelper = routeHelper;
         this.create    = create;
         this.get       = get;
         this.listByApp = listByApp;
@@ -41,17 +44,17 @@ public final class FeatureResource {
 
     public void mount(Router r) {
         r.post("/features").handler(ctx -> {
-            CreateFeatureRequest req = BaseServiceHandler.parseBody(ctx, CreateFeatureRequest.newBuilder());
+            CreateFeatureRequest req = routeHelper.parseBody(ctx, CreateFeatureRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/features/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.get("/apps/:appId/features").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByApp,
+            routeHelper.route(ctx, 200, listByApp,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("appId")).build()));
     }
 }

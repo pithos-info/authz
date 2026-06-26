@@ -19,6 +19,7 @@ package info.pithos.authz.app.handler.monetization;
 import com.google.inject.Inject;
 import com.google.protobuf.Empty;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.monetization.service.AddWorkflowFeatureRequest;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.monetization.service.RemoveWorkflowFeatureRequest;
@@ -38,8 +39,8 @@ public final class WorkflowFeatureHandlers {
         private final WorkflowFeatureService service;
 
         @Inject
-        public Add(OAuthClient oAuthClient, WorkflowFeatureService service) {
-            super(oAuthClient);
+        public Add(ApplicationContext applicationContext, OAuthClient oAuthClient, WorkflowFeatureService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -55,8 +56,8 @@ public final class WorkflowFeatureHandlers {
         private final WorkflowFeatureService service;
 
         @Inject
-        public Remove(OAuthClient oAuthClient, WorkflowFeatureService service) {
-            super(oAuthClient);
+        public Remove(ApplicationContext applicationContext, OAuthClient oAuthClient, WorkflowFeatureService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -72,8 +73,8 @@ public final class WorkflowFeatureHandlers {
         private final WorkflowFeatureService service;
 
         @Inject
-        public ListByWorkflow(OAuthClient oAuthClient, WorkflowFeatureService service) {
-            super(oAuthClient);
+        public ListByWorkflow(ApplicationContext applicationContext, OAuthClient oAuthClient, WorkflowFeatureService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

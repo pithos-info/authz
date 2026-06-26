@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.EnterpriseService;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.rbac.GroupService;
@@ -50,10 +51,10 @@ public final class EnterpriseHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Create(OAuthClient oAuthClient, EnterpriseService service,
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, EnterpriseService service,
                       GroupService groupService, GroupRoleService groupRoleService,
                       RoleService roleService, RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.service          = service;
             this.groupService     = groupService;
             this.groupRoleService = groupRoleService;
@@ -83,10 +84,10 @@ public final class EnterpriseHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Get(OAuthClient oAuthClient, EnterpriseService enterpriseService,
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient, EnterpriseService enterpriseService,
                    GroupService groupService, GroupRoleService groupRoleService,
                    RoleService roleService, RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.enterpriseService = enterpriseService;
             this.groupService      = groupService;
             this.groupRoleService  = groupRoleService;
@@ -113,10 +114,10 @@ public final class EnterpriseHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Update(OAuthClient oAuthClient, EnterpriseService service,
+        public Update(ApplicationContext applicationContext, OAuthClient oAuthClient, EnterpriseService service,
                       GroupService groupService, GroupRoleService groupRoleService,
                       RoleService roleService, RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.service          = service;
             this.groupService     = groupService;
             this.groupRoleService = groupRoleService;
@@ -142,8 +143,8 @@ public final class EnterpriseHandlers {
         private final EnterpriseService service;
 
         @Inject
-        public Delete(OAuthClient oAuthClient, EnterpriseService service) {
-            super(oAuthClient);
+        public Delete(ApplicationContext applicationContext, OAuthClient oAuthClient, EnterpriseService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -158,8 +159,8 @@ public final class EnterpriseHandlers {
         private final EnterpriseService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, EnterpriseService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, EnterpriseService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

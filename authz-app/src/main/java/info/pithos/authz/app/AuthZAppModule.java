@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import info.pithos.authn.OAuthClient;
 import info.pithos.authz.app.config.AuthZServerConfig;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.authz.app.grpc.rbac.ApiKeyGrpcService;
 import info.pithos.authz.app.grpc.rbac.EnterpriseGrpcService;
 import info.pithos.authz.app.grpc.rbac.GroupGrpcService;
@@ -84,6 +85,7 @@ import info.pithos.service.container.core.auth.ApiKeyResolver;
 import info.pithos.service.container.core.auth.UserContextResolver;
 import info.pithos.service.container.core.BaseServiceHandler;
 import info.pithos.service.container.core.LoginHandler;
+import info.pithos.service.container.core.RouteHelper;
 import info.pithos.service.container.core.grpc.AuthGrpcService;
 
 final class AuthZAppModule extends ServiceModule {
@@ -111,6 +113,9 @@ final class AuthZAppModule extends ServiceModule {
 
         // Server config (ports)
         bind(AuthZServerConfig.class).toInstance(new AuthZServerConfig(httpPort, grpcPort, bypassAuth));
+
+        // ── Routing helper ────────────────────────────────────────────────────
+        bind(RouteHelper.class).in(Singleton.class);
 
         // ── Servers & router ─────────────────────────────────────────────────
         bind(AuthZHttpServer.class).in(Singleton.class);
@@ -262,8 +267,13 @@ final class AuthZAppModule extends ServiceModule {
     // ── @Provides for service-container classes without @Inject constructors ──
 
     @Provides @Singleton
-    LoginHandler provideLoginHandler(OAuthClient oAuthClient) {
-        return new LoginHandler(oAuthClient);
+    ApplicationContext provideApplicationContext() {
+        return getApplicationContext();
+    }
+
+    @Provides @Singleton
+    LoginHandler provideLoginHandler(ApplicationContext applicationContext, OAuthClient oAuthClient) {
+        return new LoginHandler(applicationContext, oAuthClient);
     }
 
     @Provides @Singleton

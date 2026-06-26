@@ -18,24 +18,28 @@ package info.pithos.authz.app.rest.resource.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.model.Auth.LoginRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import info.pithos.service.container.core.LoginHandler;
 import io.vertx.ext.web.Router;
 
 public final class AuthResource {
 
+    private final RouteHelper routeHelper;
+
     private final LoginHandler loginHandler;
 
     @Inject
-    public AuthResource(LoginHandler loginHandler) {
+    public AuthResource(RouteHelper routeHelper,
+            LoginHandler loginHandler) {
+        this.routeHelper = routeHelper;
         this.loginHandler = loginHandler;
     }
 
     public void mount(Router r) {
         r.post("/auth/login").handler(ctx -> {
-            LoginRequest req = BaseServiceHandler.parseBody(ctx, LoginRequest.newBuilder());
+            LoginRequest req = routeHelper.parseBody(ctx, LoginRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 200, loginHandler, req);
+            routeHelper.route(ctx, 200, loginHandler, req);
         });
     }
 }

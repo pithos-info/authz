@@ -24,7 +24,7 @@ import info.pithos.authz.app.handler.rbac.UserRoleHandlers;
 import info.pithos.rbac.service.CheckPermissionRequest;
 import info.pithos.rbac.service.Empty;
 import info.pithos.rbac.service.GetByIdRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 /**
@@ -33,6 +33,8 @@ import io.vertx.ext.web.Router;
  */
 public final class MeResource {
 
+    private final RouteHelper routeHelper;
+
     private final GroupHandlers.GetUserGroups             getUserGroups;
     private final RoleHandlers.GetUserRoles               getUserRoles;
     private final UserRoleHandlers.HasRole                hasRole;
@@ -40,12 +42,13 @@ public final class MeResource {
     private final RolePermissionHandlers.HasPermission    hasPermission;
 
     @Inject
-    public MeResource(
+    public MeResource(RouteHelper routeHelper,
             GroupHandlers.GetUserGroups             getUserGroups,
             RoleHandlers.GetUserRoles               getUserRoles,
             UserRoleHandlers.HasRole                hasRole,
             RolePermissionHandlers.GetUserPermissions getUserPermissions,
             RolePermissionHandlers.HasPermission    hasPermission) {
+        this.routeHelper = routeHelper;
         this.getUserGroups      = getUserGroups;
         this.getUserRoles       = getUserRoles;
         this.hasRole            = hasRole;
@@ -55,23 +58,23 @@ public final class MeResource {
 
     public void mount(Router r) {
         r.get("/me/groups").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, getUserGroups, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, getUserGroups, Empty.getDefaultInstance()));
 
         r.get("/me/roles").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, getUserRoles, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, getUserRoles, Empty.getDefaultInstance()));
 
         r.get("/me/roles/check").handler(ctx -> {
             String roleId = ctx.queryParam("roleId").stream().findFirst().orElse("");
-            BaseServiceHandler.route(ctx, 200, hasRole,
+            routeHelper.route(ctx, 200, hasRole,
                 GetByIdRequest.newBuilder().setId(roleId).build());
         });
 
         r.get("/me/permissions").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, getUserPermissions, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, getUserPermissions, Empty.getDefaultInstance()));
 
         r.get("/me/permissions/check").handler(ctx -> {
             String permission = ctx.queryParam("permission").stream().findFirst().orElse("");
-            BaseServiceHandler.route(ctx, 200, hasPermission,
+            routeHelper.route(ctx, 200, hasPermission,
                 CheckPermissionRequest.newBuilder().setPermission(permission).build());
         });
     }

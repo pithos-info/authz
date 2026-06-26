@@ -21,10 +21,12 @@ import info.pithos.authz.app.handler.rbac.GroupMemberHandlers;
 import info.pithos.rbac.service.AddGroupMemberRequest;
 import info.pithos.rbac.service.GetByIdRequest;
 import info.pithos.rbac.service.RemoveGroupMemberRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class GroupMemberResource {
+
+    private final RouteHelper routeHelper;
 
     private final GroupMemberHandlers.Add          add;
     private final GroupMemberHandlers.Remove       remove;
@@ -32,11 +34,12 @@ public final class GroupMemberResource {
     private final GroupMemberHandlers.IsUserInGroup isUserInGroup;
 
     @Inject
-    public GroupMemberResource(
+    public GroupMemberResource(RouteHelper routeHelper,
             GroupMemberHandlers.Add          add,
             GroupMemberHandlers.Remove       remove,
             GroupMemberHandlers.ListByGroup  listByGroup,
             GroupMemberHandlers.IsUserInGroup isUserInGroup) {
+        this.routeHelper = routeHelper;
         this.add          = add;
         this.remove       = remove;
         this.listByGroup  = listByGroup;
@@ -45,26 +48,26 @@ public final class GroupMemberResource {
 
     public void mount(Router r) {
         r.post("/groups/:groupId/members").handler(ctx -> {
-            AddGroupMemberRequest req = BaseServiceHandler.parseBody(ctx, AddGroupMemberRequest.newBuilder());
+            AddGroupMemberRequest req = routeHelper.parseBody(ctx, AddGroupMemberRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, add,
+            routeHelper.route(ctx, 201, add,
                 req.toBuilder().setGroupId(ctx.pathParam("groupId")).build());
         });
 
         r.delete("/groups/:groupId/members/:userId").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, remove,
+            routeHelper.routeNoContent(ctx, remove,
                 RemoveGroupMemberRequest.newBuilder()
                     .setGroupId(ctx.pathParam("groupId"))
                     .setUserId(ctx.pathParam("userId"))
                     .build()));
 
         r.get("/groups/:groupId/members").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByGroup,
+            routeHelper.route(ctx, 200, listByGroup,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("groupId")).build()));
 
         // checks whether the authenticated user (from X-User-Id / token) is a member
         r.get("/groups/:groupId/me").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, isUserInGroup,
+            routeHelper.route(ctx, 200, isUserInGroup,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("groupId")).build()));
     }
 }

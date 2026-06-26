@@ -23,10 +23,12 @@ import info.pithos.rbac.service.DeleteByIdRequest;
 import info.pithos.rbac.service.Empty;
 import info.pithos.rbac.service.GetByIdRequest;
 import info.pithos.rbac.service.UpdateGroupRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class GroupResource {
+
+    private final RouteHelper routeHelper;
 
     private final GroupHandlers.Create create;
     private final GroupHandlers.Get    get;
@@ -35,12 +37,13 @@ public final class GroupResource {
     private final GroupHandlers.List   list;
 
     @Inject
-    public GroupResource(
+    public GroupResource(RouteHelper routeHelper,
             GroupHandlers.Create create,
             GroupHandlers.Get    get,
             GroupHandlers.Update update,
             GroupHandlers.Delete delete,
             GroupHandlers.List   list) {
+        this.routeHelper = routeHelper;
         this.create = create;
         this.get    = get;
         this.update = update;
@@ -50,27 +53,27 @@ public final class GroupResource {
 
     public void mount(Router r) {
         r.get("/groups").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, list, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, list, Empty.getDefaultInstance()));
 
         r.post("/groups").handler(ctx -> {
-            CreateGroupRequest req = BaseServiceHandler.parseBody(ctx, CreateGroupRequest.newBuilder());
+            CreateGroupRequest req = routeHelper.parseBody(ctx, CreateGroupRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/groups/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.put("/groups/:id").handler(ctx -> {
-            UpdateGroupRequest req = BaseServiceHandler.parseBody(ctx, UpdateGroupRequest.newBuilder());
+            UpdateGroupRequest req = routeHelper.parseBody(ctx, UpdateGroupRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 200, update,
+            routeHelper.route(ctx, 200, update,
                 req.toBuilder().setId(ctx.pathParam("id")).build());
         });
 
         r.delete("/groups/:id").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, delete,
+            routeHelper.routeNoContent(ctx, delete,
                 DeleteByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
     }
 }

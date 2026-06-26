@@ -20,20 +20,23 @@ import com.google.inject.Inject;
 import info.pithos.monetization.service.CreateWorkflowRequest;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.WorkflowHandlers;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class WorkflowResource {
+
+    private final RouteHelper routeHelper;
 
     private final WorkflowHandlers.Create        create;
     private final WorkflowHandlers.Get           get;
     private final WorkflowHandlers.ListByJourney listByJourney;
 
     @Inject
-    public WorkflowResource(
+    public WorkflowResource(RouteHelper routeHelper,
             WorkflowHandlers.Create        create,
             WorkflowHandlers.Get           get,
             WorkflowHandlers.ListByJourney listByJourney) {
+        this.routeHelper = routeHelper;
         this.create        = create;
         this.get           = get;
         this.listByJourney = listByJourney;
@@ -41,17 +44,17 @@ public final class WorkflowResource {
 
     public void mount(Router r) {
         r.post("/workflows").handler(ctx -> {
-            CreateWorkflowRequest req = BaseServiceHandler.parseBody(ctx, CreateWorkflowRequest.newBuilder());
+            CreateWorkflowRequest req = routeHelper.parseBody(ctx, CreateWorkflowRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/workflows/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.get("/journeys/:journeyId/workflows").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByJourney,
+            routeHelper.route(ctx, 200, listByJourney,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("journeyId")).build()));
     }
 }

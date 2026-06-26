@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.rbac.service.ApiKey;
@@ -41,8 +42,8 @@ public final class ApiKeyHandlers {
         private final ApiKeyService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, ApiKeyService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, ApiKeyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -63,8 +64,8 @@ public final class ApiKeyHandlers {
         private final ApiKeyService service;
 
         @Inject
-        public Get(OAuthClient oAuthClient, ApiKeyService service) {
-            super(oAuthClient);
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient, ApiKeyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -81,8 +82,8 @@ public final class ApiKeyHandlers {
         private final ApiKeyService service;
 
         @Inject
-        public Revoke(OAuthClient oAuthClient, ApiKeyService service) {
-            super(oAuthClient);
+        public Revoke(ApplicationContext applicationContext, OAuthClient oAuthClient, ApiKeyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -97,8 +98,8 @@ public final class ApiKeyHandlers {
         private final ApiKeyService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, ApiKeyService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, ApiKeyService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

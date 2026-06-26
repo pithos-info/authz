@@ -21,20 +21,23 @@ import info.pithos.authz.app.handler.rbac.RolePermissionHandlers;
 import info.pithos.rbac.service.AddRolePermissionRequest;
 import info.pithos.rbac.service.GetByIdRequest;
 import info.pithos.rbac.service.RemoveRolePermissionRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class RolePermissionResource {
+
+    private final RouteHelper routeHelper;
 
     private final RolePermissionHandlers.Add      add;
     private final RolePermissionHandlers.Remove   remove;
     private final RolePermissionHandlers.ListByRole listByRole;
 
     @Inject
-    public RolePermissionResource(
+    public RolePermissionResource(RouteHelper routeHelper,
             RolePermissionHandlers.Add      add,
             RolePermissionHandlers.Remove   remove,
             RolePermissionHandlers.ListByRole listByRole) {
+        this.routeHelper = routeHelper;
         this.add        = add;
         this.remove     = remove;
         this.listByRole = listByRole;
@@ -42,21 +45,21 @@ public final class RolePermissionResource {
 
     public void mount(Router r) {
         r.post("/roles/:roleId/permissions").handler(ctx -> {
-            AddRolePermissionRequest req = BaseServiceHandler.parseBody(ctx, AddRolePermissionRequest.newBuilder());
+            AddRolePermissionRequest req = routeHelper.parseBody(ctx, AddRolePermissionRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, add,
+            routeHelper.route(ctx, 201, add,
                 req.toBuilder().setRoleId(ctx.pathParam("roleId")).build());
         });
 
         r.delete("/roles/:roleId/permissions/:permission").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, remove,
+            routeHelper.routeNoContent(ctx, remove,
                 RemoveRolePermissionRequest.newBuilder()
                     .setRoleId(ctx.pathParam("roleId"))
                     .setPermission(ctx.pathParam("permission"))
                     .build()));
 
         r.get("/roles/:roleId/permissions").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByRole,
+            routeHelper.route(ctx, 200, listByRole,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("roleId")).build()));
     }
 }

@@ -36,16 +36,15 @@ import info.pithos.authz.app.grpc.rbac.UserRoleGrpcService;
 import info.pithos.service.container.core.grpc.AuthGrpcService;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.model.protocol.Context.LogLevelType;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public final class AuthZGrpcServer {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthZGrpcServer.class);
-
+    private final ApplicationContext applicationContext;
     private final AuthZServerConfig config;
     private final GrpcMetadataInterceptor interceptor;
     private final AuthGrpcService authGrpcService;
@@ -68,6 +67,7 @@ public final class AuthZGrpcServer {
 
     @Inject
     public AuthZGrpcServer(
+            ApplicationContext applicationContext,
             AuthZServerConfig config,
             GrpcMetadataInterceptor interceptor,
             AuthGrpcService authGrpcService,
@@ -85,6 +85,7 @@ public final class AuthZGrpcServer {
             JourneyGrpcService         journeyGrpcService,
             WorkflowGrpcService        workflowGrpcService,
             WorkflowFeatureGrpcService workflowFeatureGrpcService) {
+        this.applicationContext = applicationContext;
         this.config = config;
         this.interceptor = interceptor;
         this.authGrpcService = authGrpcService;
@@ -125,7 +126,8 @@ public final class AuthZGrpcServer {
                 .addService(workflowFeatureGrpcService)
                 .build()
                 .start();
-            log.info("gRPC server listening on :{}", config.grpcPort());
+            applicationContext.getSystemContext().getLogger()
+                .logRequest(null, AuthZGrpcServer.class, LogLevelType.INFO, "gRPC server listening on :{}", config.grpcPort());
         } catch (IOException e) {
             throw new IllegalStateException("Failed to start gRPC server on port " + config.grpcPort(), e);
         }

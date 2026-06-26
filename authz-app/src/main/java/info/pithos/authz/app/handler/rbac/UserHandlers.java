@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.rbac.GroupService;
 import info.pithos.rbac.RolePermissionService;
@@ -48,8 +49,8 @@ public final class UserHandlers {
         private final UserService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, UserService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, UserService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -75,13 +76,13 @@ public final class UserHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Get(OAuthClient oAuthClient,
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient,
                    UserService           userService,
                    GroupService          groupService,
                    GroupRoleService      groupRoleService,
                    RoleService           roleService,
                    RolePermissionService rpService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.userService      = userService;
             this.groupService     = groupService;
             this.groupRoleService = groupRoleService;
@@ -119,8 +120,8 @@ public final class UserHandlers {
         private final UserService service;
 
         @Inject
-        public Update(OAuthClient oAuthClient, UserService service) {
-            super(oAuthClient);
+        public Update(ApplicationContext applicationContext, OAuthClient oAuthClient, UserService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -139,8 +140,8 @@ public final class UserHandlers {
         private final UserService service;
 
         @Inject
-        public Delete(OAuthClient oAuthClient, UserService service) {
-            super(oAuthClient);
+        public Delete(ApplicationContext applicationContext, OAuthClient oAuthClient, UserService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -155,8 +156,8 @@ public final class UserHandlers {
         private final UserService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, UserService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, UserService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -175,8 +176,8 @@ public final class UserHandlers {
         private final UserService service;
 
         @Inject
-        public GetUsersInGroup(OAuthClient oAuthClient, UserService service) {
-            super(oAuthClient);
+        public GetUsersInGroup(ApplicationContext applicationContext, OAuthClient oAuthClient, UserService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 

@@ -22,19 +22,19 @@ import info.pithos.authz.app.rest.AuthZRestRouter;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.model.protocol.Context.LogLevelType;
 
 public final class AuthZHttpServer {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthZHttpServer.class);
-
+    private final ApplicationContext applicationContext;
     private final AuthZServerConfig config;
     private final AuthZRestRouter restRouter;
     private final Vertx vertx;
 
     @Inject
-    public AuthZHttpServer(AuthZServerConfig config, AuthZRestRouter restRouter) {
+    public AuthZHttpServer(ApplicationContext applicationContext, AuthZServerConfig config, AuthZRestRouter restRouter) {
+        this.applicationContext = applicationContext;
         this.config = config;
         this.restRouter = restRouter;
         this.vertx = Vertx.vertx();
@@ -52,7 +52,8 @@ public final class AuthZHttpServer {
             .toCompletableFuture()
             .join();
 
-        log.info("HTTP server listening on :{}", config.httpPort());
+        applicationContext.getSystemContext().getLogger()
+            .logRequest(null, AuthZHttpServer.class, LogLevelType.INFO, "HTTP server listening on :{}", config.httpPort());
     }
 
     public void stop() {

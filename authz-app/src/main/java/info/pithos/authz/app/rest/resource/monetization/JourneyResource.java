@@ -20,20 +20,23 @@ import com.google.inject.Inject;
 import info.pithos.monetization.service.CreateJourneyRequest;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.JourneyHandlers;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class JourneyResource {
+
+    private final RouteHelper routeHelper;
 
     private final JourneyHandlers.Create    create;
     private final JourneyHandlers.Get       get;
     private final JourneyHandlers.ListByApp listByApp;
 
     @Inject
-    public JourneyResource(
+    public JourneyResource(RouteHelper routeHelper,
             JourneyHandlers.Create    create,
             JourneyHandlers.Get       get,
             JourneyHandlers.ListByApp listByApp) {
+        this.routeHelper = routeHelper;
         this.create    = create;
         this.get       = get;
         this.listByApp = listByApp;
@@ -41,17 +44,17 @@ public final class JourneyResource {
 
     public void mount(Router r) {
         r.post("/journeys").handler(ctx -> {
-            CreateJourneyRequest req = BaseServiceHandler.parseBody(ctx, CreateJourneyRequest.newBuilder());
+            CreateJourneyRequest req = routeHelper.parseBody(ctx, CreateJourneyRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/journeys/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.get("/apps/:appId/journeys").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByApp,
+            routeHelper.route(ctx, 200, listByApp,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("appId")).build()));
     }
 }

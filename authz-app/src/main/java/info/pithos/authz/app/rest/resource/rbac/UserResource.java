@@ -23,10 +23,12 @@ import info.pithos.rbac.service.DeleteByIdRequest;
 import info.pithos.rbac.service.Empty;
 import info.pithos.rbac.service.GetByIdRequest;
 import info.pithos.rbac.service.UpdateUserRequest;
-import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.RouteHelper;
 import io.vertx.ext.web.Router;
 
 public final class UserResource {
+
+    private final RouteHelper routeHelper;
 
     private final UserHandlers.Create         create;
     private final UserHandlers.Get            get;
@@ -36,13 +38,14 @@ public final class UserResource {
     private final UserHandlers.GetUsersInGroup getUsersInGroup;
 
     @Inject
-    public UserResource(
+    public UserResource(RouteHelper routeHelper,
             UserHandlers.Create         create,
             UserHandlers.Get            get,
             UserHandlers.Update         update,
             UserHandlers.Delete         delete,
             UserHandlers.List           list,
             UserHandlers.GetUsersInGroup getUsersInGroup) {
+        this.routeHelper = routeHelper;
         this.create          = create;
         this.get             = get;
         this.update          = update;
@@ -53,31 +56,31 @@ public final class UserResource {
 
     public void mount(Router r) {
         r.get("/users").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, list, Empty.getDefaultInstance()));
+            routeHelper.route(ctx, 200, list, Empty.getDefaultInstance()));
 
         r.post("/users").handler(ctx -> {
-            CreateUserRequest req = BaseServiceHandler.parseBody(ctx, CreateUserRequest.newBuilder());
+            CreateUserRequest req = routeHelper.parseBody(ctx, CreateUserRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 201, create, req);
+            routeHelper.route(ctx, 201, create, req);
         });
 
         r.get("/users/:id").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, get,
+            routeHelper.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.put("/users/:id").handler(ctx -> {
-            UpdateUserRequest req = BaseServiceHandler.parseBody(ctx, UpdateUserRequest.newBuilder());
+            UpdateUserRequest req = routeHelper.parseBody(ctx, UpdateUserRequest.newBuilder());
             if (req == null) return;
-            BaseServiceHandler.route(ctx, 200, update,
+            routeHelper.route(ctx, 200, update,
                 req.toBuilder().setId(ctx.pathParam("id")).build());
         });
 
         r.delete("/users/:id").handler(ctx ->
-            BaseServiceHandler.routeNoContent(ctx, delete,
+            routeHelper.routeNoContent(ctx, delete,
                 DeleteByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
 
         r.get("/groups/:id/users").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, getUsersInGroup,
+            routeHelper.route(ctx, 200, getUsersInGroup,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
     }
 }

@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.monetization;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.CreateWorkflowRequest;
 import info.pithos.monetization.service.Feature;
@@ -79,8 +80,8 @@ public final class WorkflowHandlers {
         private final WorkflowService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, WorkflowService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, WorkflowService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -103,11 +104,11 @@ public final class WorkflowHandlers {
         private final FeatureService         featureService;
 
         @Inject
-        public Get(OAuthClient oAuthClient,
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient,
                    WorkflowService service,
                    WorkflowFeatureService workflowFeatureService,
                    FeatureService featureService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.service               = service;
             this.workflowFeatureService = workflowFeatureService;
             this.featureService        = featureService;
@@ -129,11 +130,11 @@ public final class WorkflowHandlers {
         private final FeatureService         featureService;
 
         @Inject
-        public ListByJourney(OAuthClient oAuthClient,
+        public ListByJourney(ApplicationContext applicationContext, OAuthClient oAuthClient,
                               WorkflowService service,
                               WorkflowFeatureService workflowFeatureService,
                               FeatureService featureService) {
-            super(oAuthClient);
+            super(applicationContext, oAuthClient);
             this.service               = service;
             this.workflowFeatureService = workflowFeatureService;
             this.featureService        = featureService;

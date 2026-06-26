@@ -18,6 +18,7 @@ package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
 import info.pithos.authn.OAuthClient;
+import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.model.Rbac;
@@ -45,8 +46,8 @@ public final class RoleHandlers {
         private final RoleService service;
 
         @Inject
-        public Create(OAuthClient oAuthClient, RoleService service) {
-            super(oAuthClient);
+        public Create(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -66,8 +67,8 @@ public final class RoleHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public Get(OAuthClient oAuthClient, RoleService roleService, RolePermissionService rpService) {
-            super(oAuthClient);
+        public Get(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService roleService, RolePermissionService rpService) {
+            super(applicationContext, oAuthClient);
             this.roleService = roleService;
             this.rpService   = rpService;
         }
@@ -87,8 +88,8 @@ public final class RoleHandlers {
         private final RoleService service;
 
         @Inject
-        public Update(OAuthClient oAuthClient, RoleService service) {
-            super(oAuthClient);
+        public Update(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -107,8 +108,8 @@ public final class RoleHandlers {
         private final RoleService service;
 
         @Inject
-        public Delete(OAuthClient oAuthClient, RoleService service) {
-            super(oAuthClient);
+        public Delete(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -123,8 +124,8 @@ public final class RoleHandlers {
         private final RoleService service;
 
         @Inject
-        public List(OAuthClient oAuthClient, RoleService service) {
-            super(oAuthClient);
+        public List(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService service) {
+            super(applicationContext, oAuthClient);
             this.service = service;
         }
 
@@ -144,8 +145,8 @@ public final class RoleHandlers {
         private final RolePermissionService rpService;
 
         @Inject
-        public GetUserRoles(OAuthClient oAuthClient, RoleService roleService, RolePermissionService rpService) {
-            super(oAuthClient);
+        public GetUserRoles(ApplicationContext applicationContext, OAuthClient oAuthClient, RoleService roleService, RolePermissionService rpService) {
+            super(applicationContext, oAuthClient);
             this.roleService = roleService;
             this.rpService   = rpService;
         }
