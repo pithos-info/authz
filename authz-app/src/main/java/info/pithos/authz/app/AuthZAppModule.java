@@ -241,7 +241,6 @@ final class AuthZAppModule extends ServiceModule {
         // ── Workflow handlers ─────────────────────────────────────────────────
         bind(WorkflowHandlers.Create.class).in(Singleton.class);
         bind(WorkflowHandlers.Get.class).in(Singleton.class);
-        bind(WorkflowHandlers.ListByApp.class).in(Singleton.class);
         bind(WorkflowHandlers.ListByJourney.class).in(Singleton.class);
 
         // ── WorkflowFeature handlers ──────────────────────────────────────────

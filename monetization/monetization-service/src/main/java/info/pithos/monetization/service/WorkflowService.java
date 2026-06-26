@@ -25,7 +25,5 @@ import java.util.concurrent.CompletableFuture;
 
 public interface WorkflowService extends ImmutableService<Monetization.Workflow> {
 
-    CompletableFuture<List<Monetization.Workflow>> listByApp(RequestContext rc, String appId);
-
     CompletableFuture<List<Monetization.Workflow>> listByJourney(RequestContext rc, String journeyId);
 }

@@ -17,8 +17,8 @@
 package info.pithos.authz.app.grpc.monetization;
 
 import com.google.inject.Inject;
+import com.google.protobuf.Empty;
 import info.pithos.monetization.service.AddWorkflowFeatureRequest;
-import info.pithos.monetization.service.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.monetization.service.RemoveWorkflowFeatureRequest;
 import info.pithos.monetization.service.WorkflowFeature;

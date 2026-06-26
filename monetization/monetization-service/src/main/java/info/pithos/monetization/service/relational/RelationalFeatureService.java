@@ -16,11 +16,13 @@
 
 package info.pithos.monetization.service.relational;
 
+import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.client.ProtoBufImmutableService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.FeatureService;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,12 +31,22 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalFeatureService extends ProtoBufImmutableService<Monetization.Feature>
         implements FeatureService {
 
-    public RelationalFeatureService(RelationalClient relationalClient) {
-        super(relationalClient, Monetization.Feature.getDefaultInstance());
+    public RelationalFeatureService(RelationalClient relationalClient,
+                                     DistributedCacheClient cacheClient,
+                                     AsyncTaskQueue taskQueue) {
+        super(relationalClient, cacheClient, taskQueue, Monetization.Feature.getDefaultInstance());
     }
 
     @Override
     public CompletableFuture<List<Monetization.Feature>> listByApp(RequestContext rc, String appId) {
-        return query(rc, FilterCriteria.eq("appId", appId).orderBy("name"));
+        return cachedList(rc, FilterCriteria.eq("appId", appId).orderBy("name"), appId);
+    }
+
+    @Override
+    protected Monetization.Feature withParent(Monetization.Feature parent, Monetization.Feature entityBase) {
+        return entityBase.toBuilder()
+            .setVersion(parent.getVersion() + 1)
+            .setParentFeatureId(parent.getId())
+            .build();
     }
 }

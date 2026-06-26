@@ -16,11 +16,13 @@
 
 package info.pithos.monetization.service.relational;
 
+import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.client.ProtoBufImmutableService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.AppService;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,12 +31,22 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalAppService extends ProtoBufImmutableService<Monetization.App>
         implements AppService {
 
-    public RelationalAppService(RelationalClient relationalClient) {
-        super(relationalClient, Monetization.App.getDefaultInstance());
+    public RelationalAppService(RelationalClient relationalClient,
+                                 DistributedCacheClient cacheClient,
+                                 AsyncTaskQueue taskQueue) {
+        super(relationalClient, cacheClient, taskQueue, Monetization.App.getDefaultInstance());
     }
 
     @Override
     public CompletableFuture<List<Monetization.App>> list(RequestContext rc) {
-        return query(rc, FilterCriteria.none().orderBy("name"));
+        return cachedList(rc, FilterCriteria.none().orderBy("name"));
+    }
+
+    @Override
+    protected Monetization.App withParent(Monetization.App parent, Monetization.App entityBase) {
+        return entityBase.toBuilder()
+            .setVersion(parent.getVersion() + 1)
+            .setParentAppId(parent.getId())
+            .build();
     }
 }

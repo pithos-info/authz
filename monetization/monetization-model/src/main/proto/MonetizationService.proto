@@ -18,6 +18,9 @@ syntax = "proto3";
 
 package info.pithos.monetization.service;
 
+import "google/protobuf/empty.proto";
+import "Monetization.proto";
+
 option java_package = "info.pithos.monetization.service";
 option java_outer_classname = "MonetizationServiceProto";
 option java_multiple_files = true;
@@ -26,24 +29,25 @@ option java_multiple_files = true;
 
 message GetByIdRequest { string id = 1; }
 
-message Empty {}
-
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 message CreateAppRequest {
-  string slug = 1;
-  string name = 2;
+  string slug        = 1;
+  string name        = 2;
+  // Optional. If set, the new App is derived from this parent: version is
+  // auto-incremented and parentAppId is set. Absent → version 1, no parent.
+  string parentAppId = 3;
 }
 
 message App {
-  string id          = 1;
-  string slug        = 2;
-  string name        = 3;
-  string ownerId     = 4;
-  int32  version     = 5;
-  string parentAppId = 6;
+  string id           = 1;
+  string slug         = 2;
+  string name         = 3;
+  string ownerId      = 4;
+  int32  version      = 5;
+  string parentAppId  = 6;
   int64  utcCreatedAt = 7;
-  string createdBy   = 8;
+  string createdBy    = 8;
 }
 
 message AppList {
@@ -51,9 +55,9 @@ message AppList {
 }
 
 service AppService {
-  rpc Create(CreateAppRequest) returns (App);
-  rpc Get(GetByIdRequest)      returns (App);
-  rpc List(Empty)              returns (AppList);
+  rpc Create(CreateAppRequest)        returns (App);
+  rpc Get(GetByIdRequest)             returns (App);
+  rpc List(google.protobuf.Empty)     returns (AppList);
 }
 
 // ─── Feature ──────────────────────────────────────────────────────────────────
@@ -62,6 +66,9 @@ message CreateFeatureRequest {
   string appId                   = 1;
   string name                    = 2;
   int32  richardsonMaturityLevel = 3;
+  // Optional. If set, the new Feature is derived from this parent: version is
+  // auto-incremented and parentFeatureId is set. Absent → version 1, no parent.
+  string parentFeatureId         = 4;
 }
 
 message Feature {
@@ -94,6 +101,9 @@ message CreateJourneyRequest {
   string description      = 4;
   string goal             = 5;
   string outcomeStatement = 6;
+  // Optional. If set, the new Journey is derived from this parent: version is
+  // auto-incremented and parentJourneyId is set. Absent → version 1, no parent.
+  string parentJourneyId  = 7;
 }
 
 message Journey {
@@ -123,34 +133,54 @@ service JourneyService {
 // ─── Workflow ─────────────────────────────────────────────────────────────────
 
 message CreateWorkflowRequest {
-  string appId      = 1;
-  string journeyId  = 2;
-  int32  depthLevel = 3;
+  string                                    appId            = 1;
+  string                                    journeyId        = 2;
+  info.pithos.monetization.model.DepthLevel depthLevel       = 3;
+  // Optional. If set, the new Workflow is derived from this parent: version is
+  // auto-incremented and parentWorkflowId is set. Absent → version 1, no parent.
+  string                                    parentWorkflowId = 4;
 }
 
 message Workflow {
-  string id               = 1;
-  string appId            = 2;
-  string journeyId        = 3;
-  int32  depthLevel       = 4;
-  int32  version          = 5;
-  string parentWorkflowId = 6;
-  int64  utcCreatedAt     = 7;
-  string createdBy        = 8;
+  string                                    id               = 1;
+  string                                    appId            = 2;
+  string                                    journeyId        = 3;
+  info.pithos.monetization.model.DepthLevel depthLevel       = 4;
+  int32                                     version          = 5;
+  string                                    parentWorkflowId = 6;
+  int64                                     utcCreatedAt     = 7;
+  string                                    createdBy        = 8;
 }
 
-message WorkflowList {
-  repeated Workflow workflows = 1;
+// WorkflowStep is one ordered step within a workflow — the feature + its position.
+// Embedded in WorkflowDetail; never persisted directly.
+message WorkflowStep {
+  int32   stepOrder = 1;
+  Feature feature   = 2;
+}
+
+// WorkflowDetail is the enriched view of a Workflow: the workflow itself plus its
+// ordered steps with full feature details. Returned by Get and ListByJourney so
+// callers assemble the full picture in a single call.
+message WorkflowDetail {
+  Workflow              workflow = 1;
+  repeated WorkflowStep steps    = 2;
+}
+
+message WorkflowDetailList {
+  repeated WorkflowDetail workflows = 1;
 }
 
 service WorkflowService {
   rpc Create(CreateWorkflowRequest) returns (Workflow);
-  rpc Get(GetByIdRequest)           returns (Workflow);
-  rpc ListByApp(GetByIdRequest)     returns (WorkflowList);
-  rpc ListByJourney(GetByIdRequest) returns (WorkflowList);
+  rpc Get(GetByIdRequest)           returns (WorkflowDetail);
+  rpc ListByJourney(GetByIdRequest) returns (WorkflowDetailList);
 }
 
 // ─── WorkflowFeature ──────────────────────────────────────────────────────────
+// WorkflowFeature is an association — it has no independent version lifecycle.
+// To evolve a Workflow's feature set, create a new Workflow version (with
+// parentWorkflowId) and re-Add the desired features to it.
 
 message AddWorkflowFeatureRequest {
   string workflowId = 1;
@@ -177,7 +207,7 @@ message WorkflowFeatureList {
 }
 
 service WorkflowFeatureService {
-  rpc Add(AddWorkflowFeatureRequest)          returns (WorkflowFeature);
-  rpc Remove(RemoveWorkflowFeatureRequest)    returns (Empty);
-  rpc ListByWorkflow(GetByIdRequest)          returns (WorkflowFeatureList);
+  rpc Add(AddWorkflowFeatureRequest)       returns (WorkflowFeature);
+  rpc Remove(RemoveWorkflowFeatureRequest) returns (google.protobuf.Empty);
+  rpc ListByWorkflow(GetByIdRequest)       returns (WorkflowFeatureList);
 }

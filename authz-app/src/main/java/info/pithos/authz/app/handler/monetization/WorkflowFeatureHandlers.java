@@ -17,9 +17,9 @@
 package info.pithos.authz.app.handler.monetization;
 
 import com.google.inject.Inject;
+import com.google.protobuf.Empty;
 import info.pithos.auth.OAuthClient;
 import info.pithos.monetization.service.AddWorkflowFeatureRequest;
-import info.pithos.monetization.service.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.monetization.service.RemoveWorkflowFeatureRequest;
 import info.pithos.monetization.service.WorkflowFeature;
@@ -46,7 +46,7 @@ public final class WorkflowFeatureHandlers {
         @Override
         public Uni<WorkflowFeature> handle(AddWorkflowFeatureRequest req, RequestContext rc) {
             return Uni.createFrom()
-                .completionStage(() -> service.add(rc, req.getWorkflowId(), req.getFeatureId()))
+                .completionStage(() -> service.add(rc, req.getWorkflowId(), req.getFeatureId(), req.getStepOrder()))
                 .map(created -> ProtoBufMapper.map(created, WorkflowFeature.newBuilder()));
         }
     }

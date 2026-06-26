@@ -16,11 +16,13 @@
 
 package info.pithos.monetization.service.relational;
 
+import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.client.ProtoBufImmutableService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.JourneyService;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,12 +31,28 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalJourneyService extends ProtoBufImmutableService<Monetization.Journey>
         implements JourneyService {
 
-    public RelationalJourneyService(RelationalClient relationalClient) {
-        super(relationalClient, Monetization.Journey.getDefaultInstance());
+    public RelationalJourneyService(RelationalClient relationalClient,
+                                     DistributedCacheClient cacheClient,
+                                     AsyncTaskQueue taskQueue) {
+        super(relationalClient, cacheClient, taskQueue, Monetization.Journey.getDefaultInstance());
     }
 
     @Override
     public CompletableFuture<List<Monetization.Journey>> listByApp(RequestContext rc, String appId) {
-        return query(rc, FilterCriteria.eq("appId", appId).orderBy("name"));
+        return cachedList(rc, FilterCriteria.eq("appId", appId).orderBy("name"), appId);
+    }
+
+    @Override
+    protected CompletableFuture<Monetization.Journey> save(RequestContext rc, Monetization.Journey entity) {
+        return super.save(rc, entity)
+            .thenCompose(saved -> invalidateListCache(rc, entity.getAppId()).thenApply(v -> saved));
+    }
+
+    @Override
+    protected Monetization.Journey withParent(Monetization.Journey parent, Monetization.Journey entityBase) {
+        return entityBase.toBuilder()
+            .setVersion(parent.getVersion() + 1)
+            .setParentJourneyId(parent.getId())
+            .build();
     }
 }

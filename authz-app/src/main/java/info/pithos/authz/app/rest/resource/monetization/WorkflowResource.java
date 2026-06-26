@@ -27,18 +27,15 @@ public final class WorkflowResource {
 
     private final WorkflowHandlers.Create        create;
     private final WorkflowHandlers.Get           get;
-    private final WorkflowHandlers.ListByApp     listByApp;
     private final WorkflowHandlers.ListByJourney listByJourney;
 
     @Inject
     public WorkflowResource(
             WorkflowHandlers.Create        create,
             WorkflowHandlers.Get           get,
-            WorkflowHandlers.ListByApp     listByApp,
             WorkflowHandlers.ListByJourney listByJourney) {
         this.create        = create;
         this.get           = get;
-        this.listByApp     = listByApp;
         this.listByJourney = listByJourney;
     }
 
@@ -52,10 +49,6 @@ public final class WorkflowResource {
         r.get("/workflows/:id").handler(ctx ->
             BaseServiceHandler.route(ctx, 200, get,
                 GetByIdRequest.newBuilder().setId(ctx.pathParam("id")).build()));
-
-        r.get("/apps/:appId/workflows").handler(ctx ->
-            BaseServiceHandler.route(ctx, 200, listByApp,
-                GetByIdRequest.newBuilder().setId(ctx.pathParam("appId")).build()));
 
         r.get("/journeys/:journeyId/workflows").handler(ctx ->
             BaseServiceHandler.route(ctx, 200, listByJourney,

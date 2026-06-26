@@ -16,11 +16,13 @@
 
 package info.pithos.monetization.service.relational;
 
+import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.data.relational.client.ProtoBufImmutableService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.WorkflowService;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,17 +31,28 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalWorkflowService extends ProtoBufImmutableService<Monetization.Workflow>
         implements WorkflowService {
 
-    public RelationalWorkflowService(RelationalClient relationalClient) {
-        super(relationalClient, Monetization.Workflow.getDefaultInstance());
-    }
-
-    @Override
-    public CompletableFuture<List<Monetization.Workflow>> listByApp(RequestContext rc, String appId) {
-        return query(rc, FilterCriteria.eq("appId", appId));
+    public RelationalWorkflowService(RelationalClient relationalClient,
+                                      DistributedCacheClient cacheClient,
+                                      AsyncTaskQueue taskQueue) {
+        super(relationalClient, cacheClient, taskQueue, Monetization.Workflow.getDefaultInstance());
     }
 
     @Override
     public CompletableFuture<List<Monetization.Workflow>> listByJourney(RequestContext rc, String journeyId) {
-        return query(rc, FilterCriteria.eq("journeyId", journeyId));
+        return cachedList(rc, FilterCriteria.eq("journeyId", journeyId), journeyId);
+    }
+
+    @Override
+    protected CompletableFuture<Monetization.Workflow> save(RequestContext rc, Monetization.Workflow entity) {
+        return super.save(rc, entity)
+            .thenCompose(saved -> invalidateListCache(rc, entity.getJourneyId()).thenApply(v -> saved));
+    }
+
+    @Override
+    protected Monetization.Workflow withParent(Monetization.Workflow parent, Monetization.Workflow entityBase) {
+        return entityBase.toBuilder()
+            .setVersion(parent.getVersion() + 1)
+            .setParentWorkflowId(parent.getId())
+            .build();
     }
 }

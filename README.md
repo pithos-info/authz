@@ -185,6 +185,33 @@ message WorkflowFeature {
 }
 ```
 
+#### `MonetizationService.proto` — public service API (`info.pithos.monetization.service`)
+
+The public contract for REST and gRPC. Imports `Monetization.proto` and `google/protobuf/empty.proto`. Key design decisions:
+
+- `Create*` requests all carry an optional `parentXxxId` field. Absent → `version = 1`. Present → auto-increment from the parent record.
+- `WorkflowFeatureService.Remove` returns `google.protobuf.Empty`.
+- `WorkflowService.ListByApp` **does not exist** — the usage pattern is App → Journeys → Workflows, so only `ListByJourney` is needed.
+- `WorkflowService.Get` and `WorkflowService.ListByJourney` return enriched types rather than flat `Workflow`:
+
+```proto
+message WorkflowStep {
+  int32   stepOrder = 1;
+  Feature feature   = 2;
+}
+
+message WorkflowDetail {
+  Workflow              workflow = 1;
+  repeated WorkflowStep steps   = 2;
+}
+
+message WorkflowDetailList {
+  repeated WorkflowDetail workflows = 1;
+}
+```
+
+`WorkflowDetail` assembly happens in `WorkflowHandlers` via a private static `assemble()` helper that fetches `WorkflowFeature` associations and resolves each feature in parallel using `CompletableFuture.allOf`. In steady state all sub-components are cache hits, so assembly involves zero DB calls.
+
 #### `MonetizationEvents.proto` — event bus (`info.pithos.monetization.events`)
 
 `JourneyEvent` is the only event emitted by Pithos. It is flat — all three catalog references (`journeyId`, `workflowId`, `featureId`) point to immutable records, so no snapshot is needed.
@@ -220,7 +247,9 @@ message JourneyEvent {
 
 ### Immutable entity design
 
-Catalog entities extend `ProtoBufImmutableService<T>` (not `ProtoBufCrudService`). The interface provides only `create` and `get` — no `update`, no `delete`. A versioned lineage is created by calling `create` with an incremented `version` and the previous record's id in `parentXxxId`.
+Catalog entities extend `ProtoBufImmutableService<T>` (not `ProtoBufCrudService`). The interface provides only `create`, `create(parentId)`, and `get` — no `update`, no `delete`.
+
+**Versioning:** calling `create(rc, entity, parentId)` fetches the parent, calls `withParent(parent, entityBase)` (overridden per service to set `version = parent.version + 1` and `parentXxxId = parent.getId()`), and persists the result. Absent `parentId` → `version = 1`.
 
 Schema consequences:
 - No `deleted` column — no soft-delete
@@ -466,7 +495,7 @@ public class RelationalGroupService extends ProtoBufCrudService<Rbac.Group>
 
 // Immutable — monetization catalog pattern
 public interface AppService extends ImmutableService<Monetization.App> {
-    CompletableFuture<List<Monetization.App>> listByApp(RequestContext rc, String appId);
+    CompletableFuture<List<Monetization.App>> list(RequestContext rc);
 }
 
 public class RelationalAppService extends ProtoBufImmutableService<Monetization.App>
@@ -476,8 +505,12 @@ public class RelationalAppService extends ProtoBufImmutableService<Monetization.
                                  DistributedCacheClient cache, AsyncTaskQueue queue) {
         super(rc, cache, queue, Monetization.App.getDefaultInstance());
     }
-    public CompletableFuture<List<Monetization.App>> listByApp(RequestContext rc, String appId) {
-        return cachedList(rc, FilterCriteria.eq("appId", appId));
+    public CompletableFuture<List<Monetization.App>> list(RequestContext rc) {
+        return cachedList(rc, FilterCriteria.none().orderBy("name"));
+    }
+    @Override
+    protected Monetization.App withParent(Monetization.App parent, Monetization.App entityBase) {
+        return entityBase.toBuilder().setVersion(parent.getVersion() + 1).setParentAppId(parent.getId()).build();
     }
 }
 ```
@@ -634,9 +667,9 @@ Phase 3 — grpcServer.start(); httpServer.start() — accept traffic
 
 ### PostgresMonetizationModule / CloudSqlMonetizationModule
 
-`init()` constructs monetization service instances. `start()` chains: open DB pool (shared database with RBAC) → run monetization Liquibase migrations inside a transaction.
+`init()` constructs the relational client, cache client (`RedisCacheClient` or `MemoryStoreCacheClient`), and all monetization service instances — each service receives both the relational and cache client via constructor. `start()` chains: open DB pool → run monetization Liquibase migrations inside a transaction → open cache pool. `shutdown()` closes the cache pool then the DB pool.
 
-A failed migration rolls back cleanly. Monetization modules have no cache pool — catalog entities use the relational client directly.
+A failed migration rolls back cleanly. Both monetization modules also bind `DistributedCacheClient` and the concrete cache type in `configure()` so downstream code can inject either.
 
 ---
 
@@ -652,24 +685,41 @@ For monetization catalog entities the qualifier is `appId` (the catalog partitio
 
 ### What is cached
 
-| Service | What | Strategy |
-|---|---|---|
-| `EnterpriseService.get` | Single `Enterprise` by id | Read-through + async write-back |
-| `GroupService.get` | Single `Group` by id | Same |
-| `GroupService.list` | All groups for an enterprise | `ProtoBufListCache` read-through + async write-back |
-| `RoleService.get` | Single `Role` by id | Same as group |
-| `RoleService.list` | All roles for an enterprise | `ProtoBufListCache` read-through + async write-back |
-| `AppService.listByApp` | All apps by appId | `ProtoBufListCache` read-through + async write-back |
-| `FeatureService.listByApp` | All features by appId | Same |
-| `JourneyService.listByApp` | All journeys by appId | Same |
-| `WorkflowService.listByApp` | All workflows by appId | Same |
+| Service | What | Cache key | Strategy |
+|---|---|---|---|
+| `EnterpriseService.get` | Single `Enterprise` by id | entity id | Read-through + async write-back |
+| `GroupService.get` | Single `Group` by id | entity id | Same |
+| `GroupService.list` | All groups for an enterprise | global list | `ProtoBufListCache` read-through + async write-back |
+| `RoleService.get` | Single `Role` by id | entity id | Same as group |
+| `RoleService.list` | All roles for an enterprise | global list | `ProtoBufListCache` read-through + async write-back |
+| `AppService.list` | All apps (system catalog) | global list | `ProtoBufListCache` read-through + async write-back |
+| `FeatureService.listByApp` | Features for an appId | `appId` | Keyed list; invalidated on new feature |
+| `JourneyService.listByApp` | Journeys for an appId | `appId` | Keyed list; invalidated on new journey |
+| `WorkflowService.listByJourney` | Workflows for a journeyId | `journeyId` | Keyed list; invalidated on new workflow |
+| `WorkflowFeatureService.listByWorkflow` | Steps for a workflowId | `workflowId` | Keyed list; invalidated on add/remove |
 
-Monetization catalog entities are read frequently and change rarely — they are ideal list-cache candidates. Individual lookups by id also benefit from the per-entity read-through cache in `ProtoBufRelationalClient`.
+Monetization catalog entities are read frequently and change rarely — ideal list-cache candidates. `WorkflowHandlers` assembles `WorkflowDetail` (workflow + steps + features) by composing cache hits from `WorkflowService`, `WorkflowFeatureService`, and `FeatureService`. In steady state, `WorkflowDetail` assembly makes zero DB calls.
+
+### Cache-Control bypass
+
+Any request with `Cache-Control: no-cache` skips the list cache and reads directly from the database. This is detected via `rc.getCacheControl()` in `ProtoBufImmutableService.isNoCache()` and applied to all `cachedList` and `cachedList(key)` call sites, including `RelationalWorkflowFeatureService`.
+
+### Cache invalidation
+
+| Mutation | Invalidated key |
+|---|---|
+| New `Journey` created | `journeyService.invalidateListCache(rc, journey.getAppId())` |
+| New `Workflow` created | `workflowService.invalidateListCache(rc, workflow.getJourneyId())` |
+| `WorkflowFeature` added or removed | `workflowFeatureService.invalidate(rc, workflowId)` |
+
+Invalidation is chained inside each service's overridden `save()` (for journeys and workflows) or after `insert`/`deleteByKey` (for workflow features), so it runs transparently regardless of which handler triggers the mutation.
 
 ### Backend wiring
 
-- **Cloud SQL modules** — use `MemoryStoreCacheClient` (GCP Memorystore)
-- **Postgres modules** — use `RedisCacheClient`
+- **Cloud SQL modules** — `CloudSqlMonetizationModule` constructs and starts a `MemoryStoreCacheClient` (GCP Memorystore)
+- **Postgres modules** — `PostgresMonetizationModule` constructs and starts a `RedisCacheClient`
+
+Both modules wire the concrete type and `DistributedCacheClient` into Guice so that `ProtoBufImmutableService` subclasses can receive the cache via constructor injection.
 
 ---
 
@@ -731,7 +781,7 @@ API scripts live in `client-api/` and use the [Bruno](https://www.usebruno.com/)
 | `apps/` | Create, get, list, create-version |
 | `features/` | Create, get, list-by-app, create-version |
 | `journeys/` | Create, get, list-by-app, create-version |
-| `workflows/` | Create, get, list-by-journey, create-version |
+| `workflows/` | Create, get (returns `WorkflowDetail`), list-by-journey (returns `WorkflowDetailList`), create-version |
 | `workflow-features/` | Add feature to workflow, remove, list-by-workflow |
 
 Environment variables used across scripts:

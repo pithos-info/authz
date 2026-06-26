@@ -16,6 +16,8 @@
 
 package info.pithos.monetization.postgres;
 
+import info.pithos.data.cache.DistributedCacheClient;
+import info.pithos.data.cache.redis.RedisCacheClient;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.postgres.PostgresClient;
 import info.pithos.monetization.service.MonetizationServiceModule;
@@ -25,6 +27,7 @@ import info.pithos.monetization.service.relational.RelationalJourneyService;
 import info.pithos.monetization.service.relational.RelationalWorkflowFeatureService;
 import info.pithos.monetization.service.relational.RelationalWorkflowService;
 import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.context.AsyncTaskQueue;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -40,7 +43,8 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
 
     private static final String CHANGELOG = "db/changelog/postgres/db.changelog-master.xml";
 
-    private PostgresClient relationalClient;
+    private PostgresClient   relationalClient;
+    private RedisCacheClient cacheClient;
 
     public PostgresMonetizationModule(ApplicationContext context) {
         super(context);
@@ -49,12 +53,14 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
     @Override
     public boolean init() {
         if (this.initialized.compareAndSet(false, true)) {
-            this.relationalClient      = new PostgresClient(this.getApplicationContext());
-            this.appService            = new RelationalAppService(this.relationalClient);
-            this.featureService        = new RelationalFeatureService(this.relationalClient);
-            this.journeyService        = new RelationalJourneyService(this.relationalClient);
-            this.workflowService       = new RelationalWorkflowService(this.relationalClient);
-            this.workflowFeatureService = new RelationalWorkflowFeatureService(this.relationalClient);
+            AsyncTaskQueue taskQueue        = this.getApplicationContext().getSystemContext().getTaskQueue();
+            this.relationalClient           = new PostgresClient(this.getApplicationContext());
+            this.cacheClient                = new RedisCacheClient(this.getApplicationContext());
+            this.appService                 = new RelationalAppService(this.relationalClient, this.cacheClient, taskQueue);
+            this.featureService             = new RelationalFeatureService(this.relationalClient, this.cacheClient, taskQueue);
+            this.journeyService             = new RelationalJourneyService(this.relationalClient, this.cacheClient, taskQueue);
+            this.workflowService            = new RelationalWorkflowService(this.relationalClient, this.cacheClient, taskQueue);
+            this.workflowFeatureService     = new RelationalWorkflowFeatureService(this.relationalClient, this.cacheClient, taskQueue);
         }
         return this.initialized.get();
     }
@@ -68,12 +74,13 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
                 new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)
                     .update(new Contexts(), new LabelExpression());
             }))
-            .thenApply(v -> true);
+            .thenCompose(v -> cacheClient.start(timeout, unit));
     }
 
     @Override
     public CompletableFuture<Boolean> shutdown(long timeout, TimeUnit unit) {
-        return relationalClient.shutdown(timeout, unit);
+        return cacheClient.shutdown(timeout, unit)
+            .thenCompose(ok -> relationalClient.shutdown(timeout, unit));
     }
 
     @Override
@@ -81,5 +88,7 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
         super.configure();
         bind(RelationalClient.class).toInstance(this.relationalClient);
         bind(PostgresClient.class).toInstance(this.relationalClient);
+        bind(DistributedCacheClient.class).toInstance(this.cacheClient);
+        bind(RedisCacheClient.class).toInstance(this.cacheClient);
     }
 }

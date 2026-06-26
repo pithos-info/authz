@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface WorkflowFeatureService extends AssociationService<Monetization.WorkflowFeature> {
 
-    CompletableFuture<Monetization.WorkflowFeature> add(RequestContext rc, String workflowId, String featureId);
+    CompletableFuture<Monetization.WorkflowFeature> add(RequestContext rc, String workflowId, String featureId, int stepOrder);
 
     CompletableFuture<Void> remove(RequestContext rc, String workflowId, String featureId);
 
