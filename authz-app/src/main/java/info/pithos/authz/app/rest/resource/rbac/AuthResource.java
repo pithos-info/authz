@@ -17,7 +17,7 @@
 package info.pithos.authz.app.rest.resource.rbac;
 
 import com.google.inject.Inject;
-import info.pithos.auth.model.Auth.LoginRequest;
+import info.pithos.authn.model.Auth.LoginRequest;
 import info.pithos.service.container.core.BaseServiceHandler;
 import info.pithos.service.container.core.LoginHandler;
 import io.vertx.ext.web.Router;

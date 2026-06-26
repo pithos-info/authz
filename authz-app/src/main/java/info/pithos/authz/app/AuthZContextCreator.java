@@ -16,7 +16,7 @@
 
 package info.pithos.authz.app;
 
-import info.pithos.auth.gcp.GcpIdentityOAuthModule;
+import info.pithos.authn.gcp.GcpIdentityOAuthModule;
 import info.pithos.data.blob.minio.MinioBlobStorageModule;
 import info.pithos.authz.app.auth.BypassAuthModule;
 import info.pithos.authz.app.config.AuthZBootstrapConfig;

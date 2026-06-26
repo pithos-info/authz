@@ -17,7 +17,7 @@
 package info.pithos.authz.app.handler.monetization;
 
 import com.google.inject.Inject;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.CreateJourneyRequest;
 

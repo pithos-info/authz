@@ -17,7 +17,7 @@
 package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.rbac.service.ApiKey;

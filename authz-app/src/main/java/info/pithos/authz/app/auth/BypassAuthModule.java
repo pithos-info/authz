@@ -16,7 +16,7 @@
 
 package info.pithos.authz.app.auth;
 
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.runtime.core.context.ApplicationContext;
 import info.pithos.runtime.core.context.ServiceModule;
 

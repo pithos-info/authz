@@ -17,7 +17,7 @@
 package info.pithos.authz.app.auth;
 
 import com.google.inject.Inject;
-import info.pithos.auth.model.TokenIntrospection;
+import info.pithos.authn.model.TokenIntrospection;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.Context.RequestContext;

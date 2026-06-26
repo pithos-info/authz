@@ -21,7 +21,7 @@ import com.google.inject.Singleton;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.authz.app.config.AuthZServerConfig;
 import info.pithos.authz.app.grpc.rbac.ApiKeyGrpcService;
 import info.pithos.authz.app.grpc.rbac.EnterpriseGrpcService;

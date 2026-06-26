@@ -17,7 +17,7 @@
 package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.model.Rbac;

@@ -17,7 +17,7 @@
 package info.pithos.rbac.mcp.auth;
 
 import com.google.inject.Inject;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.service.container.core.auth.ApiKeyResolver;
 

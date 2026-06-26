@@ -16,11 +16,11 @@
 
 package info.pithos.authz.app.auth;
 
-import info.pithos.auth.OAuthClient;
-import info.pithos.auth.model.TokenIntrospection;
-import info.pithos.auth.model.TokenResponse;
-import info.pithos.auth.model.TokenType;
-import info.pithos.auth.model.UserInfo;
+import info.pithos.authn.OAuthClient;
+import info.pithos.authn.model.TokenIntrospection;
+import info.pithos.authn.model.TokenResponse;
+import info.pithos.authn.model.TokenType;
+import info.pithos.authn.model.UserInfo;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;

@@ -17,7 +17,7 @@
 package info.pithos.authz.app.handler.rbac;
 
 import com.google.inject.Inject;
-import info.pithos.auth.OAuthClient;
+import info.pithos.authn.OAuthClient;
 import info.pithos.data.relational.FilterCriteria;
 import info.pithos.rbac.GroupRoleService;
 import info.pithos.rbac.service.AssignGroupRoleRequest;
