@@ -21,7 +21,7 @@ import info.pithos.monetization.service.App;
 import info.pithos.monetization.service.AppList;
 import info.pithos.monetization.service.AppServiceGrpc;
 import info.pithos.monetization.service.CreateAppRequest;
-import info.pithos.monetization.service.Empty;
+import com.google.protobuf.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.AppHandlers;
 import info.pithos.service.container.core.grpc.GrpcSupport;

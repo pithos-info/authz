@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import info.pithos.auth.OAuthClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.CreateFeatureRequest;
-import info.pithos.monetization.service.Empty;
+
 import info.pithos.monetization.service.Feature;
 import info.pithos.monetization.service.FeatureList;
 import info.pithos.monetization.service.FeatureService;

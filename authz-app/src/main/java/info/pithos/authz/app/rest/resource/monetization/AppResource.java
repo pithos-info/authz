@@ -18,7 +18,7 @@ package info.pithos.authz.app.rest.resource.monetization;
 
 import com.google.inject.Inject;
 import info.pithos.monetization.service.CreateAppRequest;
-import info.pithos.monetization.service.Empty;
+import com.google.protobuf.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.authz.app.handler.monetization.AppHandlers;
 import info.pithos.service.container.core.BaseServiceHandler;

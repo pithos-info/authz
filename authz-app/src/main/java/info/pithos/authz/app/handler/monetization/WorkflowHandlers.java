@@ -59,7 +59,7 @@ public final class WorkflowHandlers {
                 return CompletableFuture.allOf(featureFutures.toArray(new CompletableFuture[0]))
                     .thenApply(ignored -> {
                         WorkflowDetail.Builder detail = WorkflowDetail.newBuilder()
-                            .setWorkflow(ProtoBufMapper.map(workflow, Workflow.newBuilder()));
+                            .setWorkflow(ProtoBufMapper.<Workflow>map(workflow, Workflow.newBuilder()));
                         for (int i = 0; i < wfList.size(); i++) {
                             Monetization.WorkflowFeature wf = wfList.get(i);
                             Monetization.Feature feature = featureFutures.get(i).join()
@@ -67,7 +67,7 @@ public final class WorkflowHandlers {
                                     "Feature not found: " + wf.getFeatureId()));
                             detail.addSteps(WorkflowStep.newBuilder()
                                 .setStepOrder(wf.getStepOrder())
-                                .setFeature(ProtoBufMapper.map(feature, Feature.newBuilder()))
+                                .setFeature(ProtoBufMapper.<Feature>map(feature, Feature.newBuilder()))
                                 .build());
                         }
                         return detail.build();

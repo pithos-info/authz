@@ -23,7 +23,7 @@ import info.pithos.monetization.service.App;
 import info.pithos.monetization.service.AppList;
 import info.pithos.monetization.service.AppService;
 import info.pithos.monetization.service.CreateAppRequest;
-import info.pithos.monetization.service.Empty;
+import com.google.protobuf.Empty;
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.runtime.core.context.ErrorCode;
 import info.pithos.runtime.core.context.ServiceException;

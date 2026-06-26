@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import info.pithos.auth.OAuthClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.CreateJourneyRequest;
-import info.pithos.monetization.service.Empty;
+
 import info.pithos.monetization.service.GetByIdRequest;
 import info.pithos.monetization.service.Journey;
 import info.pithos.monetization.service.JourneyList;
