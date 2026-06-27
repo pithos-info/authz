@@ -114,6 +114,9 @@ final class AuthZAppModule extends ServiceModule {
         // Server config (ports)
         bind(AuthZServerConfig.class).toInstance(new AuthZServerConfig(httpPort, grpcPort, bypassAuth));
 
+        // ── Application context ───────────────────────────────────────────────
+        bind(ApplicationContext.class).toInstance(getApplicationContext());
+
         // ── Routing helper ────────────────────────────────────────────────────
         bind(RouteHelper.class).in(Singleton.class);
 
@@ -265,11 +268,6 @@ final class AuthZAppModule extends ServiceModule {
     }
 
     // ── @Provides for service-container classes without @Inject constructors ──
-
-    @Provides @Singleton
-    ApplicationContext provideApplicationContext() {
-        return getApplicationContext();
-    }
 
     @Provides @Singleton
     LoginHandler provideLoginHandler(ApplicationContext applicationContext, OAuthClient oAuthClient) {
