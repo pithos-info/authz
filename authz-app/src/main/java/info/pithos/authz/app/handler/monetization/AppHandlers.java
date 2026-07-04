@@ -31,6 +31,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 public final class AppHandlers {
@@ -45,6 +46,9 @@ public final class AppHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.app.create"; }
 
         @Override
         public Uni<App> handle(CreateAppRequest req, RequestContext rc) {
@@ -69,6 +73,9 @@ public final class AppHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.app.get"; }
+
+        @Override
         public Uni<App> handle(GetByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.get(rc, req.getId()))
                 .map(opt -> opt.map(d -> ProtoBufMapper.<App>map(d, App.newBuilder()))
@@ -85,6 +92,9 @@ public final class AppHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.app.list"; }
 
         @Override
         public Uni<AppList> handle(Empty req, RequestContext rc) {

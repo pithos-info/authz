@@ -37,6 +37,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 import java.util.concurrent.CompletableFuture;
@@ -53,6 +54,9 @@ public final class UserHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.create"; }
 
         @Override
         public Uni<User> handle(CreateUserRequest req, RequestContext rc) {
@@ -91,6 +95,9 @@ public final class UserHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.get"; }
+
+        @Override
         public Uni<User> handle(GetByIdRequest req, RequestContext rc) {
             CompletableFuture<User> future =
                 userService.get(rc, req.getId())
@@ -126,6 +133,9 @@ public final class UserHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.update"; }
+
+        @Override
         public Uni<User> handle(UpdateUserRequest req, RequestContext rc) {
             Rbac.User data = Rbac.User.newBuilder()
                 .setId(req.getId())
@@ -146,6 +156,9 @@ public final class UserHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.delete"; }
+
+        @Override
         public Uni<Empty> handle(DeleteByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.delete(rc, req.getId()))
                 .map(v -> Empty.getDefaultInstance());
@@ -160,6 +173,9 @@ public final class UserHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.list"; }
 
         @Override
         public Uni<UserList> handle(Empty req, RequestContext rc) {
@@ -180,6 +196,9 @@ public final class UserHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.listByGroup"; }
 
         @Override
         public Uni<UserList> handle(GetByIdRequest req, RequestContext rc) {

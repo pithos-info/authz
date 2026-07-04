@@ -33,6 +33,7 @@ import info.pithos.rbac.service.RolePermissionList;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 
@@ -48,6 +49,9 @@ public final class RolePermissionHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.permission.add"; }
 
         @Override
         public Uni<RolePermission> handle(AddRolePermissionRequest req, RequestContext rc) {
@@ -67,6 +71,9 @@ public final class RolePermissionHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.permission.remove"; }
+
+        @Override
         public Uni<Empty> handle(RemoveRolePermissionRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.remove(rc, req.getRoleId(), req.getPermission()))
@@ -82,6 +89,9 @@ public final class RolePermissionHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.permission.list"; }
 
         @Override
         public Uni<RolePermissionList> handle(GetByIdRequest req, RequestContext rc) {
@@ -106,6 +116,9 @@ public final class RolePermissionHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.permission.check"; }
+
+        @Override
         public Uni<Bool> handle(CheckPermissionRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.hasPermission(rc, req.getPermission()))
@@ -121,6 +134,9 @@ public final class RolePermissionHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.permission.listByUser"; }
 
         @Override
         public Uni<PermissionList> handle(Empty req, RequestContext rc) {

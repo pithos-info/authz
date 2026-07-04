@@ -38,7 +38,7 @@ public enum RbacOperation implements InfraOperation {
     RbacOperation(String stem) { this.stem = stem; }
     @Override public String stem() { return stem; }
 
-    static void record(MetricsCommitter mc, RequestContext rc, RbacOperation op, long startMs, Throwable ex) {
+    public static void record(MetricsCommitter mc, RequestContext rc, RbacOperation op, long startMs, Throwable ex) {
         if (mc == null) return;
         long elapsed = System.currentTimeMillis() - startMs;
         mc.record(rc, MetricEvent.newBuilder()

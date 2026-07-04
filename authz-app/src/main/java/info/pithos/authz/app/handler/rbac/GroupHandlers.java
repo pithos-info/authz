@@ -35,6 +35,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +52,9 @@ public final class GroupHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.create"; }
 
         @Override
         public Uni<Group> handle(CreateGroupRequest req, RequestContext rc) {
@@ -83,6 +87,9 @@ public final class GroupHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.get"; }
+
+        @Override
         public Uni<Group> handle(GetByIdRequest req, RequestContext rc) {
             CompletableFuture<Group> future =
                 groupService.get(rc, req.getId())
@@ -102,6 +109,9 @@ public final class GroupHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.update"; }
 
         @Override
         public Uni<Group> handle(UpdateGroupRequest req, RequestContext rc) {
@@ -124,6 +134,9 @@ public final class GroupHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.delete"; }
+
+        @Override
         public Uni<Empty> handle(DeleteByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.delete(rc, req.getId()))
                 .map(v -> Empty.getDefaultInstance());
@@ -138,6 +151,9 @@ public final class GroupHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.list"; }
 
         @Override
         public Uni<GroupList> handle(Empty req, RequestContext rc) {
@@ -168,6 +184,9 @@ public final class GroupHandlers {
             this.roleService      = roleService;
             this.rpService        = rpService;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.listByUser"; }
 
         @Override
         public Uni<GroupList> handle(Empty req, RequestContext rc) {

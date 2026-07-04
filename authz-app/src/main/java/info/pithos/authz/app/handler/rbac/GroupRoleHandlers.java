@@ -30,6 +30,7 @@ import info.pithos.rbac.service.UnassignGroupRoleRequest;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 
@@ -45,6 +46,9 @@ public final class GroupRoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.role.assign"; }
 
         @Override
         public Uni<GroupRole> handle(AssignGroupRoleRequest req, RequestContext rc) {
@@ -64,6 +68,9 @@ public final class GroupRoleHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.role.unassign"; }
+
+        @Override
         public Uni<Empty> handle(UnassignGroupRoleRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.unassign(rc, req.getGroupId(), req.getRoleId()))
@@ -79,6 +86,9 @@ public final class GroupRoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.role.list"; }
 
         @Override
         public Uni<GroupRoleList> handle(GetByIdRequest req, RequestContext rc) {

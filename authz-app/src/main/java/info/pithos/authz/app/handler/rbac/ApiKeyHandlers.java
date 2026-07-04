@@ -32,6 +32,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 public final class ApiKeyHandlers {
@@ -46,6 +47,9 @@ public final class ApiKeyHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.apikey.create"; }
 
         @Override
         public Uni<ApiKey> handle(CreateApiKeyRequest req, RequestContext rc) {
@@ -70,6 +74,9 @@ public final class ApiKeyHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.apikey.get"; }
+
+        @Override
         public Uni<ApiKey> handle(GetByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.get(rc, req.getId()))
                 .map(opt -> opt.orElseThrow(() ->
@@ -88,6 +95,9 @@ public final class ApiKeyHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.apikey.revoke"; }
+
+        @Override
         public Uni<Empty> handle(DeleteByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.revoke(rc, req.getId()))
                 .map(v -> Empty.getDefaultInstance());
@@ -102,6 +112,9 @@ public final class ApiKeyHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.apikey.list"; }
 
         @Override
         public Uni<ApiKeyList> handle(Empty req, RequestContext rc) {

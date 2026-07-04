@@ -31,6 +31,7 @@ import info.pithos.rbac.service.UserRoleList;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 
@@ -46,6 +47,9 @@ public final class UserRoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.role.grant"; }
 
         @Override
         public Uni<UserRole> handle(GrantUserRoleRequest req, RequestContext rc) {
@@ -65,6 +69,9 @@ public final class UserRoleHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.role.revoke"; }
+
+        @Override
         public Uni<Empty> handle(RevokeUserRoleRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.revoke(rc, req.getUserId(), req.getRoleId()))
@@ -80,6 +87,9 @@ public final class UserRoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.role.list"; }
 
         @Override
         public Uni<UserRoleList> handle(GetByIdRequest req, RequestContext rc) {
@@ -102,6 +112,9 @@ public final class UserRoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.user.role.check"; }
 
         @Override
         public Uni<Bool> handle(GetByIdRequest req, RequestContext rc) {

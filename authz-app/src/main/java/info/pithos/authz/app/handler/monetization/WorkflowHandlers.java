@@ -35,6 +35,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 import java.util.List;
@@ -86,6 +87,9 @@ public final class WorkflowHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.create"; }
+
+        @Override
         public Uni<Workflow> handle(CreateWorkflowRequest req, RequestContext rc) {
             Monetization.Workflow data = Monetization.Workflow.newBuilder()
                 .setAppId(req.getAppId())
@@ -115,6 +119,9 @@ public final class WorkflowHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.get"; }
+
+        @Override
         public Uni<WorkflowDetail> handle(GetByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.get(rc, req.getId()))
                 .map(opt -> opt.orElseThrow(() ->
@@ -139,6 +146,9 @@ public final class WorkflowHandlers {
             this.workflowFeatureService = workflowFeatureService;
             this.featureService        = featureService;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.listByJourney"; }
 
         @Override
         public Uni<WorkflowDetailList> handle(GetByIdRequest req, RequestContext rc) {

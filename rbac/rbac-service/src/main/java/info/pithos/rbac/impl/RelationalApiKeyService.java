@@ -58,7 +58,7 @@ public class RelationalApiKeyService extends ProtoBufCrudService<Rbac.ApiKey> im
     public CompletableFuture<Optional<Rbac.ApiKey>> findByKeyHash(RequestContext rc, String keyHash) {
         long startMs = System.currentTimeMillis();
         return query(rc, FilterCriteria.eq("keyHash", keyHash))
-            .thenApply(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)))
+            .thenApply(list -> list.isEmpty() ? Optional.<Rbac.ApiKey>empty() : Optional.of(list.get(0)))
             .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.APIKEY_RESOLVE, startMs, ex));
     }
 

@@ -37,6 +37,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 public final class EnterpriseHandlers {
@@ -61,6 +62,9 @@ public final class EnterpriseHandlers {
             this.roleService      = roleService;
             this.rpService        = rpService;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.enterprise.create"; }
 
         @Override
         public Uni<Enterprise> handle(CreateEnterpriseRequest req, RequestContext rc) {
@@ -96,6 +100,9 @@ public final class EnterpriseHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.enterprise.get"; }
+
+        @Override
         public Uni<Enterprise> handle(GetByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() ->
                 enterpriseService.get(rc, req.getId())
@@ -126,6 +133,9 @@ public final class EnterpriseHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.enterprise.update"; }
+
+        @Override
         public Uni<Enterprise> handle(UpdateEnterpriseRequest req, RequestContext rc) {
             Rbac.Enterprise data = Rbac.Enterprise.newBuilder()
                 .setId(req.getId())
@@ -149,6 +159,9 @@ public final class EnterpriseHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.enterprise.delete"; }
+
+        @Override
         public Uni<Empty> handle(DeleteByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.delete(rc, req.getId()))
                 .map(v -> Empty.getDefaultInstance());
@@ -163,6 +176,9 @@ public final class EnterpriseHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.enterprise.list"; }
 
         @Override
         public Uni<EnterpriseList> handle(Empty req, RequestContext rc) {

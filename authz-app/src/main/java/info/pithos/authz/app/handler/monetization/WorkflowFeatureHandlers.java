@@ -29,6 +29,7 @@ import info.pithos.monetization.service.WorkflowFeatureService;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 public final class WorkflowFeatureHandlers {
@@ -43,6 +44,9 @@ public final class WorkflowFeatureHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.feature.add"; }
 
         @Override
         public Uni<WorkflowFeature> handle(AddWorkflowFeatureRequest req, RequestContext rc) {
@@ -62,6 +66,9 @@ public final class WorkflowFeatureHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.feature.remove"; }
+
+        @Override
         public Uni<Empty> handle(RemoveWorkflowFeatureRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.remove(rc, req.getWorkflowId(), req.getFeatureId()))
@@ -77,6 +84,9 @@ public final class WorkflowFeatureHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.workflow.feature.list"; }
 
         @Override
         public Uni<WorkflowFeatureList> handle(GetByIdRequest req, RequestContext rc) {

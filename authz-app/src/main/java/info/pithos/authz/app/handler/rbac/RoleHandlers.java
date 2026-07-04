@@ -34,6 +34,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +51,9 @@ public final class RoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.create"; }
 
         @Override
         public Uni<Role> handle(CreateRoleRequest req, RequestContext rc) {
@@ -74,6 +78,9 @@ public final class RoleHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.get"; }
+
+        @Override
         public Uni<Role> handle(GetByIdRequest req, RequestContext rc) {
             CompletableFuture<Role> future =
                 roleService.get(rc, req.getId())
@@ -92,6 +99,9 @@ public final class RoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.update"; }
 
         @Override
         public Uni<Role> handle(UpdateRoleRequest req, RequestContext rc) {
@@ -114,6 +124,9 @@ public final class RoleHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.delete"; }
+
+        @Override
         public Uni<Empty> handle(DeleteByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.delete(rc, req.getId()))
                 .map(v -> Empty.getDefaultInstance());
@@ -128,6 +141,9 @@ public final class RoleHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.list"; }
 
         @Override
         public Uni<RoleList> handle(Empty req, RequestContext rc) {
@@ -150,6 +166,9 @@ public final class RoleHandlers {
             this.roleService = roleService;
             this.rpService   = rpService;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.role.listByUser"; }
 
         @Override
         public Uni<RoleList> handle(Empty req, RequestContext rc) {

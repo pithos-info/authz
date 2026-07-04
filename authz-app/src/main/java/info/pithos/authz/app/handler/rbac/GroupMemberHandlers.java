@@ -31,6 +31,7 @@ import info.pithos.rbac.service.RemoveGroupMemberRequest;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 
@@ -46,6 +47,9 @@ public final class GroupMemberHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.member.add"; }
 
         @Override
         public Uni<GroupMember> handle(AddGroupMemberRequest req, RequestContext rc) {
@@ -65,6 +69,9 @@ public final class GroupMemberHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.member.remove"; }
+
+        @Override
         public Uni<Empty> handle(RemoveGroupMemberRequest req, RequestContext rc) {
             return Uni.createFrom()
                 .completionStage(() -> service.remove(rc, req.getGroupId(), req.getUserId()))
@@ -80,6 +87,9 @@ public final class GroupMemberHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.member.list"; }
 
         @Override
         public Uni<GroupMemberList> handle(GetByIdRequest req, RequestContext rc) {
@@ -102,6 +112,9 @@ public final class GroupMemberHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "rbac.group.member.check"; }
 
         @Override
         public Uni<Bool> handle(GetByIdRequest req, RequestContext rc) {

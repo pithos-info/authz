@@ -31,6 +31,7 @@ import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 import info.pithos.serde.ProtoBufMapper;
 import info.pithos.service.container.core.BaseServiceHandler;
+import info.pithos.service.container.core.ServiceOperation;
 import io.smallrye.mutiny.Uni;
 
 public final class FeatureHandlers {
@@ -45,6 +46,9 @@ public final class FeatureHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.feature.create"; }
 
         @Override
         public Uni<Feature> handle(CreateFeatureRequest req, RequestContext rc) {
@@ -69,6 +73,9 @@ public final class FeatureHandlers {
         }
 
         @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.feature.get"; }
+
+        @Override
         public Uni<Feature> handle(GetByIdRequest req, RequestContext rc) {
             return Uni.createFrom().completionStage(() -> service.get(rc, req.getId()))
                 .map(opt -> opt.map(d -> ProtoBufMapper.<Feature>map(d, Feature.newBuilder()))
@@ -85,6 +92,9 @@ public final class FeatureHandlers {
             super(applicationContext, oAuthClient);
             this.service = service;
         }
+
+        @Override
+        protected ServiceOperation serviceOperation() { return () -> "monetization.feature.listByApp"; }
 
         @Override
         public Uni<FeatureList> handle(GetByIdRequest req, RequestContext rc) {
