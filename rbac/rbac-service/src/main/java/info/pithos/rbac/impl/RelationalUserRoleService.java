@@ -18,8 +18,11 @@ package info.pithos.rbac.impl;
 
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
+import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.UserRoleService;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.Optional;
@@ -28,26 +31,33 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.UserRole>
         implements UserRoleService {
 
-    public RelationalUserRoleService(RelationalClient relationalClient) {
+    private final MetricsCommitter mc;
+
+    public RelationalUserRoleService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "userRole", Rbac.UserRole.getDefaultInstance(), "userId", "roleId");
+        this.mc = applicationContext.getMetricsCommitter();
     }
 
     @Override
     public CompletableFuture<Rbac.UserRole> grant(RequestContext rc, String userId, String roleId) {
+        long startMs = System.currentTimeMillis();
         Rbac.UserRole userRole = Rbac.UserRole.newBuilder()
             .setEnterpriseId(authEnterpriseId(rc))
             .setUserId(userId)
             .setRoleId(roleId)
             .setGrantedById(authUserId(rc))
             .build();
-        return insert(rc, userRole);
+        return insert(rc, userRole)
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_GRANT, startMs, ex));
     }
 
     @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String userId, String roleId) {
+        long startMs = System.currentTimeMillis();
         Rbac.UserRole key = Rbac.UserRole.newBuilder()
             .setUserId(userId).setRoleId(roleId).build();
-        return deleteByKey(rc, key);
+        return deleteByKey(rc, key)
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_REVOKE, startMs, ex));
     }
 
     @Override
@@ -59,6 +69,7 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
 
     @Override
     public CompletableFuture<Boolean> hasRole(RequestContext rc, String roleId) {
+        long startMs = System.currentTimeMillis();
         String uid = authUserId(rc);
         return relationalClient.query(dc(rc),
             """
@@ -73,6 +84,7 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
                 AND EXISTS (SELECT 1 FROM "user" WHERE id = ? AND "enterpriseId" = ? AND deleted = false)
             ) AS result
             """, uid, roleId, uid, roleId, uid, authEnterpriseId(rc))
-            .thenApply(rows -> rows.get(0).getBoolean("result"));
+            .thenApply(rows -> rows.get(0).getBoolean("result"))
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_CHECK, startMs, ex));
     }
 }

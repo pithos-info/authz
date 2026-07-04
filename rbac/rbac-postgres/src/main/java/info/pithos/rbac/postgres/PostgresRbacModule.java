@@ -65,12 +65,12 @@ public final class PostgresRbacModule extends RbacServiceModule {
             this.enterpriseService      = new RelationalEnterpriseService(this.relationalClient, this.cacheClient, taskQueue);
             this.userService            = new RelationalUserService(this.relationalClient);
             this.groupService           = new RelationalGroupService(this.relationalClient, this.cacheClient, taskQueue);
-            this.groupMemberService     = new RelationalGroupMemberService(this.relationalClient);
-            this.userRoleService        = new RelationalUserRoleService(this.relationalClient);
+            this.groupMemberService     = new RelationalGroupMemberService(this.getApplicationContext(), this.relationalClient);
+            this.userRoleService        = new RelationalUserRoleService(this.getApplicationContext(), this.relationalClient);
             this.groupRoleService       = new RelationalGroupRoleService(this.relationalClient);
-            this.rolePermissionService  = new RelationalRolePermissionService(this.relationalClient);
+            this.rolePermissionService  = new RelationalRolePermissionService(this.getApplicationContext(), this.relationalClient);
             this.roleService            = new RelationalRoleService(this.relationalClient, this.cacheClient, taskQueue);
-            this.apiKeyService          = new RelationalApiKeyService(this.relationalClient);
+            this.apiKeyService          = new RelationalApiKeyService(this.getApplicationContext(), this.relationalClient);
         }
         return this.initialized.get();
     }

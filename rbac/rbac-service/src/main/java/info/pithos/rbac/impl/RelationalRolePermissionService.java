@@ -18,8 +18,11 @@ package info.pithos.rbac.impl;
 
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
+import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,8 +32,11 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalRolePermissionService extends ProtoBufAssociationService<Rbac.RolePermission>
         implements RolePermissionService {
 
-    public RelationalRolePermissionService(RelationalClient relationalClient) {
+    private final MetricsCommitter mc;
+
+    public RelationalRolePermissionService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "rolePermission", Rbac.RolePermission.getDefaultInstance(), "roleId", "permission");
+        this.mc = applicationContext.getMetricsCommitter();
     }
 
     @Override
@@ -59,6 +65,7 @@ public class RelationalRolePermissionService extends ProtoBufAssociationService<
 
     @Override
     public CompletableFuture<Boolean> hasPermission(RequestContext rc, String permission) {
+        long startMs = System.currentTimeMillis();
         String uid = authUserId(rc);
         return relationalClient.query(dc(rc),
             """
@@ -77,7 +84,8 @@ public class RelationalRolePermissionService extends ProtoBufAssociationService<
                 AND EXISTS (SELECT 1 FROM "user" WHERE id = ? AND "enterpriseId" = ? AND deleted = false)
             ) AS result
             """, permission, uid, uid, uid, authEnterpriseId(rc))
-            .thenApply(rows -> rows.get(0).getBoolean("result"));
+            .thenApply(rows -> rows.get(0).getBoolean("result"))
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.PERMISSION_CHECK, startMs, ex));
     }
 
     @Override

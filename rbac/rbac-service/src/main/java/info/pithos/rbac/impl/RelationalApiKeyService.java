@@ -21,7 +21,10 @@ import info.pithos.data.relational.PreparedQuery;
 import info.pithos.rbac.ApiKeyService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufCrudService;
+import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -30,13 +33,18 @@ import java.util.concurrent.CompletableFuture;
 
 public class RelationalApiKeyService extends ProtoBufCrudService<Rbac.ApiKey> implements ApiKeyService {
 
-    public RelationalApiKeyService(RelationalClient relationalClient) {
+    private final MetricsCommitter mc;
+
+    public RelationalApiKeyService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "apiKey", Rbac.ApiKey.getDefaultInstance());
+        this.mc = applicationContext.getMetricsCommitter();
     }
 
     @Override
     public CompletableFuture<Void> revoke(RequestContext rc, String id) {
-        return erase(rc, id);
+        long startMs = System.currentTimeMillis();
+        return erase(rc, id)
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.APIKEY_REVOKE, startMs, ex));
     }
 
     @Override
@@ -48,14 +56,18 @@ public class RelationalApiKeyService extends ProtoBufCrudService<Rbac.ApiKey> im
 
     @Override
     public CompletableFuture<Optional<Rbac.ApiKey>> findByKeyHash(RequestContext rc, String keyHash) {
+        long startMs = System.currentTimeMillis();
         return query(rc, FilterCriteria.eq("keyHash", keyHash))
-            .thenApply(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)));
+            .thenApply(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)))
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.APIKEY_RESOLVE, startMs, ex));
     }
 
     @Override
     public CompletableFuture<Void> touch(RequestContext rc, String id) {
+        long startMs = System.currentTimeMillis();
         String sql = "UPDATE \"apiKey\" SET \"lastUsedAt\" = now() WHERE id = ?";
         return relationalClient.execute(dc(rc), new PreparedQuery(sql, new Object[]{id}))
-            .thenAccept(n -> {});
+            .thenAccept(n -> {})
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.APIKEY_TOUCH, startMs, ex));
     }
 }

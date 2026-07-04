@@ -19,7 +19,10 @@ package info.pithos.rbac.impl;
 import info.pithos.rbac.GroupMemberService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.client.ProtoBufAssociationService;
+import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.model.Rbac;
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -29,8 +32,11 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalGroupMemberService extends ProtoBufAssociationService<Rbac.GroupMember>
         implements GroupMemberService {
 
-    public RelationalGroupMemberService(RelationalClient relationalClient) {
+    private final MetricsCommitter mc;
+
+    public RelationalGroupMemberService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "groupMember", Rbac.GroupMember.getDefaultInstance(), "groupId", "userId");
+        this.mc = applicationContext.getMetricsCommitter();
     }
 
     @Override
@@ -59,6 +65,7 @@ public class RelationalGroupMemberService extends ProtoBufAssociationService<Rba
 
     @Override
     public CompletableFuture<Boolean> isUserInGroup(RequestContext rc, String groupId) {
+        long startMs = System.currentTimeMillis();
         return relationalClient.query(dc(rc),
             """
             SELECT EXISTS (
@@ -67,6 +74,7 @@ public class RelationalGroupMemberService extends ProtoBufAssociationService<Rba
                 WHERE gm."userId" = ? AND gm."groupId" = ? AND g."enterpriseId" = ? AND g.deleted = false
             ) AS result
             """, authUserId(rc), groupId, authEnterpriseId(rc))
-            .thenApply(rows -> rows.get(0).getBoolean("result"));
+            .thenApply(rows -> rows.get(0).getBoolean("result"))
+            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.GROUP_MEMBER_CHECK, startMs, ex));
     }
 }

@@ -797,3 +797,50 @@ Environment variables used across scripts:
 | `groupId` | Group ID |
 | `roleId` | Role ID |
 | `permission` | Permission string, e.g. `portfolios:read` |
+
+---
+
+## Metrics
+
+High-value RBAC operations emit **service-tier metrics** (Tier 2) automatically via `MetricsCommitter`. No caller instrumentation required. CRUD operations on roles, groups, enterprises, and users are not instrumented — they are sparse setup operations.
+
+### RbacOperation
+
+| Enum value | Metric stem | Method |
+|---|---|---|
+| `PERMISSION_CHECK` | `rbac.permission.check` | `RolePermissionService.hasPermission()` |
+| `ROLE_GRANT` | `rbac.role.grant` | `UserRoleService.grant()` |
+| `ROLE_REVOKE` | `rbac.role.revoke` | `UserRoleService.revoke()` |
+| `ROLE_CHECK` | `rbac.role.check` | `UserRoleService.hasRole()` |
+| `GROUP_MEMBER_CHECK` | `rbac.group.member.check` | `GroupMemberService.isUserInGroup()` |
+| `APIKEY_REVOKE` | `rbac.apikey.revoke` | `ApiKeyService.revoke()` |
+| `APIKEY_RESOLVE` | `rbac.apikey.resolve` | `ApiKeyService.findByKeyHash()` |
+| `APIKEY_TOUCH` | `rbac.apikey.touch` | `ApiKeyService.touch()` |
+
+### What is emitted per operation
+
+Each operation emits **2 metric events**:
+
+| Metric | Unit | Description |
+|---|---|---|
+| `{stem}.latency` | MS | wall-clock time of the service call |
+| `{stem}.success` / `{stem}.failure` / `{stem}.timeout` | COUNT | outcome |
+
+No `componentId`, `componentType`, or `method`/`protocol` fields are set — `MetricEventBuilder` routes these to `ServiceMetricRaw` (latency) and `ServiceCounter` (outcome).
+
+### Example: `RolePermissionService.hasPermission()`
+
+| metric | unit |
+|---|---|
+| `rbac.permission.check.latency` | MS |
+| `rbac.permission.check.success` | COUNT |
+
+### Tier routing
+
+| Field | Value |
+|---|---|
+| `componentId` | not set |
+| `componentType` | not set |
+| `method` / `protocol` | not set |
+
+→ Routed to **Tier 2** (ServiceMetricRaw / ServiceCounter) by `MetricEventBuilder`.
