@@ -16,10 +16,13 @@
 
 package info.pithos.rbac;
 
+import info.pithos.runtime.core.context.ApplicationContext;
+import info.pithos.runtime.core.log.ServiceLogger;
 import info.pithos.runtime.core.metrics.InfraOperation;
 import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.metrics.Metrics.MetricEvent;
 import info.pithos.runtime.model.metrics.Metrics.MetricUnit;
+import info.pithos.runtime.model.protocol.Context.LogLevelType;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 // High-value RBAC operations emitted as service-tier (Tier 2) metrics.
@@ -38,12 +41,19 @@ public enum RbacOperation implements InfraOperation {
     RbacOperation(String stem) { this.stem = stem; }
     @Override public String stem() { return stem; }
 
-    public static void record(MetricsCommitter mc, RequestContext rc, RbacOperation op, long startMs, Throwable ex) {
+    public static void record(ApplicationContext ctx, RequestContext rc, RbacOperation op, long startMs, Throwable ex) {
+        MetricsCommitter mc = ctx.getMetricsCommitter();
         if (mc == null) return;
         long elapsed = System.currentTimeMillis() - startMs;
         mc.record(rc, MetricEvent.newBuilder()
                 .setMetric(op.latency()).setUnit(MetricUnit.MS).setValue(elapsed).build());
         mc.record(rc, MetricEvent.newBuilder()
                 .setMetric(InfraOperation.outcome(op, ex)).setUnit(MetricUnit.COUNT).setValue(1.0).build());
+        ServiceLogger log = ctx.getSystemContext().getLogger();
+        if (ex == null) {
+            log.logRequest(rc, RbacOperation.class, LogLevelType.DEBUG, "{} {}ms", op.stem(), elapsed);
+        } else {
+            log.logRequest(rc, RbacOperation.class, LogLevelType.ERROR, ex, "{} failed after {}ms", op.stem(), elapsed);
+        }
     }
 }

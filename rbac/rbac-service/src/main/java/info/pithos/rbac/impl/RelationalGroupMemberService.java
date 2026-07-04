@@ -22,7 +22,6 @@ import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.core.context.ApplicationContext;
-import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -32,11 +31,11 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalGroupMemberService extends ProtoBufAssociationService<Rbac.GroupMember>
         implements GroupMemberService {
 
-    private final MetricsCommitter mc;
+    private final ApplicationContext ctx;
 
     public RelationalGroupMemberService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "groupMember", Rbac.GroupMember.getDefaultInstance(), "groupId", "userId");
-        this.mc = applicationContext.getMetricsCommitter();
+        this.ctx = applicationContext;
     }
 
     @Override
@@ -75,6 +74,6 @@ public class RelationalGroupMemberService extends ProtoBufAssociationService<Rba
             ) AS result
             """, authUserId(rc), groupId, authEnterpriseId(rc))
             .thenApply(rows -> rows.get(0).getBoolean("result"))
-            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.GROUP_MEMBER_CHECK, startMs, ex));
+            .whenComplete((v, ex) -> RbacOperation.record(ctx, rc, RbacOperation.GROUP_MEMBER_CHECK, startMs, ex));
     }
 }

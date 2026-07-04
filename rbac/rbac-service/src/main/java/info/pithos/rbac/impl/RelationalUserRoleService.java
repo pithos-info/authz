@@ -22,7 +22,6 @@ import info.pithos.rbac.RbacOperation;
 import info.pithos.rbac.UserRoleService;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.core.context.ApplicationContext;
-import info.pithos.runtime.core.metrics.MetricsCommitter;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.Optional;
@@ -31,11 +30,11 @@ import java.util.concurrent.CompletableFuture;
 public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.UserRole>
         implements UserRoleService {
 
-    private final MetricsCommitter mc;
+    private final ApplicationContext ctx;
 
     public RelationalUserRoleService(ApplicationContext applicationContext, RelationalClient relationalClient) {
         super(relationalClient, "userRole", Rbac.UserRole.getDefaultInstance(), "userId", "roleId");
-        this.mc = applicationContext.getMetricsCommitter();
+        this.ctx = applicationContext;
     }
 
     @Override
@@ -48,7 +47,7 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
             .setGrantedById(authUserId(rc))
             .build();
         return insert(rc, userRole)
-            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_GRANT, startMs, ex));
+            .whenComplete((v, ex) -> RbacOperation.record(ctx, rc, RbacOperation.ROLE_GRANT, startMs, ex));
     }
 
     @Override
@@ -57,7 +56,7 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
         Rbac.UserRole key = Rbac.UserRole.newBuilder()
             .setUserId(userId).setRoleId(roleId).build();
         return deleteByKey(rc, key)
-            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_REVOKE, startMs, ex));
+            .whenComplete((v, ex) -> RbacOperation.record(ctx, rc, RbacOperation.ROLE_REVOKE, startMs, ex));
     }
 
     @Override
@@ -85,6 +84,6 @@ public class RelationalUserRoleService extends ProtoBufAssociationService<Rbac.U
             ) AS result
             """, uid, roleId, uid, roleId, uid, authEnterpriseId(rc))
             .thenApply(rows -> rows.get(0).getBoolean("result"))
-            .whenComplete((v, ex) -> RbacOperation.record(mc, rc, RbacOperation.ROLE_CHECK, startMs, ex));
+            .whenComplete((v, ex) -> RbacOperation.record(ctx, rc, RbacOperation.ROLE_CHECK, startMs, ex));
     }
 }
