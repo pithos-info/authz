@@ -7,11 +7,11 @@
     <parent>
         <groupId>info.pithos.rbac</groupId>
         <artifactId>info-pithos-rbac</artifactId>
-    <name>Pithos Rbac</name>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>info-pithos-rbac-cloudsql</artifactId>
+    <name>Pithos Rbac Cloudsql</name>
 
     <dependencies>
         <dependency>
