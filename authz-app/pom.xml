@@ -7,6 +7,7 @@
     <parent>
         <groupId>info.pithos.authz</groupId>
         <artifactId>info-pithos-authz</artifactId>
+    <name>Pithos Authz</name>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
