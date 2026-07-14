@@ -46,8 +46,8 @@ message App {
   string ownerId      = 4;
   int32  version      = 5;
   string parentAppId  = 6;
-  int64  utcCreatedAt = 7;
-  string createdBy    = 8;
+  int64  utcCreatedTimestampMs = 7;
+  string createdByUserId       = 8;
 }
 
 message AppList {
@@ -78,8 +78,8 @@ message Feature {
   int32  richardsonMaturityLevel = 4;
   int32  version                 = 5;
   string parentFeatureId         = 6;
-  int64  utcCreatedAt            = 7;
-  string createdBy               = 8;
+  int64  utcCreatedTimestampMs   = 7;
+  string createdByUserId         = 8;
 }
 
 message FeatureList {
@@ -116,8 +116,8 @@ message Journey {
   string outcomeStatement = 7;
   int32  version          = 8;
   string parentJourneyId  = 9;
-  int64  utcCreatedAt     = 10;
-  string createdBy        = 11;
+  int64  utcCreatedTimestampMs = 10;
+  string createdByUserId       = 11;
 }
 
 message JourneyList {
@@ -148,8 +148,8 @@ message Workflow {
   info.pithos.monetization.model.DepthLevel depthLevel       = 4;
   int32                                     version          = 5;
   string                                    parentWorkflowId = 6;
-  int64                                     utcCreatedAt     = 7;
-  string                                    createdBy        = 8;
+  int64                                     utcCreatedTimestampMs = 7;
+  string                                    createdByUserId       = 8;
 }
 
 // WorkflowStep is one ordered step within a workflow — the feature + its position.
@@ -198,8 +198,8 @@ message WorkflowFeature {
   string workflowId   = 2;
   string featureId    = 3;
   int32  stepOrder    = 4;
-  int64  utcCreatedAt = 5;
-  string createdBy    = 6;
+  int64  utcCreatedTimestampMs = 5;
+  string createdByUserId       = 6;
 }
 
 message WorkflowFeatureList {

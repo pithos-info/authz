@@ -43,8 +43,8 @@ message App {
   string ownerId      = 4;  // userId of the registering principal
   int32  version      = 5;  // increments on each new version; starts at 1
   string parentAppId  = 6;  // id of the app this was derived from; empty for v1
-  int64  utcCreatedAt = 7;  // epoch millis
-  string createdBy    = 8;  // userId
+  int64  utcCreatedTimestampMs = 7;  // epoch millis
+  string createdByUserId       = 8;  // userId
 }
 
 // ─── Feature ──────────────────────────────────────────────────────────────────
@@ -61,8 +61,8 @@ message Feature {
   int32  richardsonMaturityLevel = 4;  // 0–3
   int32  version                 = 5;  // increments on each new version; starts at 1
   string parentFeatureId         = 6;  // id of the feature this was derived from; empty for v1
-  int64  utcCreatedAt            = 7;  // epoch millis
-  string createdBy               = 8;  // userId
+  int64  utcCreatedTimestampMs   = 7;  // epoch millis
+  string createdByUserId         = 8;  // userId
 }
 
 // ─── Journey ──────────────────────────────────────────────────────────────────
@@ -82,8 +82,8 @@ message Journey {
   string outcomeStatement = 7;  // what they will have when the journey completes
   int32  version          = 8;  // increments on each new version; starts at 1
   string parentJourneyId  = 9;  // id of the journey this was derived from; empty for v1
-  int64  utcCreatedAt     = 10; // epoch millis
-  string createdBy        = 11; // userId
+  int64  utcCreatedTimestampMs = 10; // epoch millis
+  string createdByUserId       = 11; // userId
 }
 
 // ─── Workflow ─────────────────────────────────────────────────────────────────
@@ -101,8 +101,8 @@ message Workflow {
   DepthLevel depthLevel   = 4;
   int32  version          = 5;  // increments on each new version; starts at 1
   string parentWorkflowId = 6;  // id of the workflow this was derived from; empty for v1
-  int64  utcCreatedAt     = 7;  // epoch millis
-  string createdBy        = 8;  // userId
+  int64  utcCreatedTimestampMs = 7;  // epoch millis
+  string createdByUserId       = 8;  // userId
 }
 
 // ─── WorkflowFeature ──────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ message WorkflowFeature {
   string workflowId   = 2;
   string featureId    = 3;
   int32  stepOrder    = 4;  // execution order within the workflow
-  int64  utcCreatedAt = 5;  // epoch millis
-  string createdBy    = 6;  // userId
+  int64  utcCreatedTimestampMs = 5;  // epoch millis
+  string createdByUserId       = 6;  // userId
 }
 

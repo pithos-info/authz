@@ -7,7 +7,7 @@
 
     <!-- Immutable. No deleted, utcModifiedAt, or updatedBy columns. -->
     <changeSet id="V001__create_app" author="pithos">
-        <createTable tableName="App">
+        <createTable tableName="app">
             <column name="id" type="VARCHAR(36)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -26,10 +26,10 @@
             <column name="parentAppId" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
-            <column name="utcCreatedAt" type="BIGINT">
+            <column name="utcCreatedTimestampMs" type="TIMESTAMPTZ" defaultValueComputed="now()">
                 <constraints nullable="false"/>
             </column>
-            <column name="createdBy" type="VARCHAR(36)">
+            <column name="createdByUserId" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>

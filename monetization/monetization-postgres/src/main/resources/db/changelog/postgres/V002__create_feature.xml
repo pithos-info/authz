@@ -9,7 +9,7 @@
     <!-- Indexes on appId and parentFeatureId are created automatically by the  -->
     <!-- framework — no manual declarations needed.                             -->
     <changeSet id="V002__create_feature" author="pithos">
-        <createTable tableName="Feature">
+        <createTable tableName="feature">
             <column name="id" type="VARCHAR(36)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -28,10 +28,10 @@
             <column name="parentFeatureId" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
-            <column name="utcCreatedAt" type="BIGINT">
+            <column name="utcCreatedTimestampMs" type="TIMESTAMPTZ" defaultValueComputed="now()">
                 <constraints nullable="false"/>
             </column>
-            <column name="createdBy" type="VARCHAR(36)">
+            <column name="createdByUserId" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>

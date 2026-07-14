@@ -9,7 +9,7 @@
     <!-- Composite primary key: (workflowId, featureId).                       -->
     <!-- stepOrder defines execution sequence within the workflow.              -->
     <changeSet id="V005__create_workflow_feature" author="pithos">
-        <createTable tableName="WorkflowFeature">
+        <createTable tableName="workflowFeature">
             <column name="appId" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
@@ -22,16 +22,16 @@
             <column name="stepOrder" type="INT">
                 <constraints nullable="false"/>
             </column>
-            <column name="utcCreatedAt" type="BIGINT">
+            <column name="utcCreatedTimestampMs" type="TIMESTAMPTZ" defaultValueComputed="now()">
                 <constraints nullable="false"/>
             </column>
-            <column name="createdBy" type="VARCHAR(36)">
+            <column name="createdByUserId" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
 
         <addPrimaryKey
-            tableName="WorkflowFeature"
+            tableName="workflowFeature"
             columnNames="workflowId, featureId"
             constraintName="pk_workflow_feature"/>
     </changeSet>
