@@ -16,9 +16,7 @@
 
 package info.pithos.monetization.postgres;
 
-import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.cache.redis.RedisCacheClient;
-import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.postgres.PostgresClient;
 import info.pithos.monetization.service.MonetizationServiceModule;
 import info.pithos.monetization.service.relational.RelationalAppService;
@@ -86,9 +84,9 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
     @Override
     protected void configure() {
         super.configure();
-        bind(RelationalClient.class).toInstance(this.relationalClient);
-        bind(PostgresClient.class).toInstance(this.relationalClient);
-        bind(DistributedCacheClient.class).toInstance(this.cacheClient);
-        bind(RedisCacheClient.class).toInstance(this.cacheClient);
+        // RelationalClient / PostgresClient / DistributedCacheClient / RedisCacheClient are
+        // intentionally not bound here: PostgresRbacModule already binds them when both modules
+        // are installed together (authz-app), and nothing in this codebase injects them —
+        // all services here receive their client instances directly via constructor args in init().
     }
 }

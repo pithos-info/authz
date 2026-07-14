@@ -16,9 +16,7 @@
 
 package info.pithos.monetization.cloudsql;
 
-import info.pithos.data.cache.DistributedCacheClient;
 import info.pithos.data.cache.memorystore.MemoryStoreCacheClient;
-import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.data.relational.cloudsql.CloudSqlClient;
 import info.pithos.monetization.service.MonetizationServiceModule;
 import info.pithos.monetization.service.relational.RelationalAppService;
@@ -86,9 +84,9 @@ public final class CloudSqlMonetizationModule extends MonetizationServiceModule 
     @Override
     protected void configure() {
         super.configure();
-        bind(RelationalClient.class).toInstance(this.relationalClient);
-        bind(CloudSqlClient.class).toInstance(this.relationalClient);
-        bind(DistributedCacheClient.class).toInstance(this.cacheClient);
-        bind(MemoryStoreCacheClient.class).toInstance(this.cacheClient);
+        // RelationalClient / CloudSqlClient / DistributedCacheClient / MemoryStoreCacheClient are
+        // intentionally not bound here: CloudSqlRbacModule already binds them when both modules
+        // are installed together (authz-app), and nothing in this codebase injects them —
+        // all services here receive their client instances directly via constructor args in init().
     }
 }
