@@ -50,7 +50,7 @@ public class RelationalApiKeyService extends ProtoBufCrudService<Rbac.ApiKey> im
     public CompletableFuture<List<Rbac.ApiKey>> list(RequestContext rc) {
         return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc))
                                       .and(FilterCriteria.eq("userId", authUserId(rc)))
-                                      .orderBy("utcCreatedAt"));
+                                      .orderBy("utcCreatedTimestampMs"));
     }
 
     @Override

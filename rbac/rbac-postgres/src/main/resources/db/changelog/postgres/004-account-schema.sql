@@ -8,8 +8,8 @@ CREATE TABLE "account" (
     type            TEXT NOT NULL,                            -- PERSONAL | TEAM
     "ownerId"       TEXT REFERENCES "user"(id),              -- set when type=PERSONAL
     "enterpriseId"  TEXT REFERENCES "enterprise"(id),        -- set when type=TEAM
-    "utcCreatedAt"  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    "utcModifiedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "utcCreatedTimestampMs"  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "utcTimestampMs" TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted         BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT "account_type_check" CHECK (
         (type = 'PERSONAL' AND "ownerId" IS NOT NULL AND "enterpriseId" IS NULL) OR
@@ -21,7 +21,7 @@ CREATE TABLE "accountUser" (
     "accountId"     TEXT NOT NULL REFERENCES "account"(id),
     "userId"        TEXT NOT NULL REFERENCES "user"(id),
     role            TEXT NOT NULL DEFAULT 'MEMBER',           -- OWNER | MEMBER
-    "utcCreatedAt"  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "utcCreatedTimestampMs"  TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY ("accountId", "userId")
 );
 

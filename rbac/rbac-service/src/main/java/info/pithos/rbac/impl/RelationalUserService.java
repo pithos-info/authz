@@ -36,7 +36,7 @@ public class RelationalUserService extends ProtoBufCrudService<Rbac.User> implem
 
     @Override
     public CompletableFuture<List<Rbac.User>> list(RequestContext rc) {
-        return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("utcCreatedAt"));
+        return query(rc, FilterCriteria.eq("enterpriseId", authEnterpriseId(rc)).orderBy("utcCreatedTimestampMs"));
     }
 
     @Override

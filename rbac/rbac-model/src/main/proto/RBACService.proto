@@ -47,14 +47,14 @@ message UpdateEnterpriseRequest {
 }
 
 message Enterprise {
-  string id            = 1;
-  string slug          = 2;
-  string name          = 3;
-  string domain        = 4;
-  int64  utcCreatedAt  = 5;
-  int64  utcModifiedAt = 6;
-  repeated Group groups = 7;  // all groups in this enterprise, each carrying their assigned roles
-  repeated Role  roles  = 8;  // all roles in this enterprise, each carrying their permissions
+  string id                    = 1;
+  string slug                  = 2;
+  string name                  = 3;
+  string domain                = 4;
+  int64  utcCreatedTimestampMs = 5;
+  int64  utcTimestampMs        = 6;  // last modified
+  repeated Group groups        = 7;  // all groups in this enterprise, each carrying their assigned roles
+  repeated Role  roles         = 8;  // all roles in this enterprise, each carrying their permissions
 }
 
 message EnterpriseList {
@@ -85,15 +85,15 @@ message UpdateUserRequest {
 }
 
 message User {
-  string id            = 1;
-  string enterpriseId  = 2;
-  string email         = 3;
-  string displayName   = 4;
-  int64  lastLoginAt   = 5;
-  int64  utcCreatedAt  = 6;
-  int64  utcModifiedAt = 7;
-  repeated Group groups = 8;  // groups this user belongs to, each carrying their assigned roles
-  repeated Role  roles  = 9;  // effective roles (direct + via groups), each carrying their permissions
+  string id                    = 1;
+  string enterpriseId          = 2;
+  string email                 = 3;
+  string displayName           = 4;
+  int64  lastLoginAt           = 5;
+  int64  utcCreatedTimestampMs = 6;
+  int64  utcTimestampMs        = 7;  // last modified
+  repeated Group groups        = 8;  // groups this user belongs to, each carrying their assigned roles
+  repeated Role  roles         = 9;  // effective roles (direct + via groups), each carrying their permissions
 }
 
 message UserList {
@@ -121,12 +121,12 @@ message UpdateGroupRequest {
 }
 
 message Group {
-  string id            = 1;
-  string enterpriseId  = 2;
-  string name          = 3;
-  int64  utcCreatedAt  = 4;
-  int64  utcModifiedAt = 5;
-  repeated Role roles  = 6;  // roles assigned to this group, each carrying their permissions
+  string id                    = 1;
+  string enterpriseId          = 2;
+  string name                  = 3;
+  int64  utcCreatedTimestampMs = 4;
+  int64  utcTimestampMs        = 5;  // last modified
+  repeated Role roles          = 6;  // roles assigned to this group, each carrying their permissions
 }
 
 message GroupList {
@@ -154,12 +154,12 @@ message UpdateRoleRequest {
 }
 
 message Role {
-  string id                   = 1;
-  string enterpriseId         = 2;
-  string name                 = 3;
-  int64  utcCreatedAt         = 4;
-  int64  utcModifiedAt        = 5;
-  repeated string permissions = 6;  // permission strings, e.g. "agents:run", "agents:create"
+  string id                    = 1;
+  string enterpriseId          = 2;
+  string name                  = 3;
+  int64  utcCreatedTimestampMs = 4;
+  int64  utcTimestampMs        = 5;  // last modified
+  repeated string permissions  = 6;  // permission strings, e.g. "agents:run", "agents:create"
 }
 
 message RoleList {
@@ -193,7 +193,7 @@ message ApiKey {
   repeated string permissions  = 6;
   int64           expiresAt    = 7;
   int64           lastUsedAt   = 8;
-  int64           utcCreatedAt = 9;
+  int64           utcCreatedTimestampMs = 9;
 }
 
 message ApiKeyList {
@@ -220,9 +220,9 @@ message RemoveGroupMemberRequest {
 }
 
 message GroupMember {
-  string groupId      = 1;
-  string userId       = 2;
-  int64  utcCreatedAt = 3;
+  string groupId               = 1;
+  string userId                = 2;
+  int64  utcCreatedTimestampMs = 3;
 }
 
 message GroupMemberList {
@@ -249,10 +249,10 @@ message RevokeUserRoleRequest {
 }
 
 message UserRole {
-  string userId       = 1;
-  string roleId       = 2;
-  string grantedById  = 3;
-  int64  utcCreatedAt = 4;
+  string userId                = 1;
+  string roleId                = 2;
+  string grantedById           = 3;
+  int64  utcCreatedTimestampMs = 4;
 }
 
 message UserRoleList {
@@ -279,9 +279,9 @@ message UnassignGroupRoleRequest {
 }
 
 message GroupRole {
-  string groupId      = 1;
-  string roleId       = 2;
-  int64  utcCreatedAt = 3;
+  string groupId               = 1;
+  string roleId                = 2;
+  int64  utcCreatedTimestampMs = 3;
 }
 
 message GroupRoleList {
@@ -307,9 +307,9 @@ message RemoveRolePermissionRequest {
 }
 
 message RolePermission {
-  string roleId       = 1;
-  string permission   = 2;
-  int64  utcCreatedAt = 3;
+  string roleId                = 1;
+  string permission            = 2;
+  int64  utcCreatedTimestampMs = 3;
 }
 
 message RolePermissionList {
@@ -347,13 +347,13 @@ message UpdateAccountRequest {
 }
 
 message Account {
-  string id            = 1;
-  string name          = 2;
-  string type          = 3;  // PERSONAL | TEAM
-  string enterpriseId  = 4;  // set when type=TEAM
-  int64  utcCreatedAt  = 5;
-  int64  utcModifiedAt = 6;
-  User   owner         = 7;  // the OWNER member; populated on Create and Get
+  string id                    = 1;
+  string name                  = 2;
+  string type                  = 3;  // PERSONAL | TEAM
+  string enterpriseId          = 4;  // set when type=TEAM
+  int64  utcCreatedTimestampMs = 5;
+  int64  utcTimestampMs        = 6;  // last modified
+  User   owner                 = 7;  // the OWNER member; populated on Create and Get
 }
 
 message AccountList {
@@ -383,11 +383,11 @@ message RemoveAccountUserRequest {
 }
 
 message AccountUser {
-  string accountId    = 1;
-  string userId       = 2;
-  string role         = 3;  // OWNER | MEMBER
-  int64  utcCreatedAt = 4;
-  User   user         = 5;  // populated on Add and ListByAccount for display (name, email)
+  string accountId             = 1;
+  string userId                = 2;
+  string role                  = 3;  // OWNER | MEMBER
+  int64  utcCreatedTimestampMs = 4;
+  User   user                  = 5;  // populated on Add and ListByAccount for display (name, email)
 }
 
 message AccountUserList {

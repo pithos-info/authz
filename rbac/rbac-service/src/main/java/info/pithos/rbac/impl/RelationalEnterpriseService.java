@@ -39,6 +39,6 @@ public class RelationalEnterpriseService extends ProtoBufCrudService<Rbac.Enterp
 
     @Override
     public CompletableFuture<List<Rbac.Enterprise>> list(RequestContext rc) {
-        return cachedList(rc, FilterCriteria.none().orderBy("utcCreatedAt"));
+        return cachedList(rc, FilterCriteria.none().orderBy("utcCreatedTimestampMs"));
     }
 }
