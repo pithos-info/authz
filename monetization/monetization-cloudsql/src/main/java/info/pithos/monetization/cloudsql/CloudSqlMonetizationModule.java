@@ -58,7 +58,7 @@ public final class CloudSqlMonetizationModule extends MonetizationServiceModule 
             this.featureService             = new RelationalFeatureService(this.relationalClient, this.cacheClient, taskQueue);
             this.journeyService             = new RelationalJourneyService(this.relationalClient, this.cacheClient, taskQueue);
             this.workflowService            = new RelationalWorkflowService(this.relationalClient, this.cacheClient, taskQueue);
-            this.workflowFeatureService     = new RelationalWorkflowFeatureService(this.relationalClient, this.cacheClient, taskQueue);
+            this.workflowFeatureService     = new RelationalWorkflowFeatureService(this.relationalClient, this.cacheClient, taskQueue, this.workflowService);
         }
         return this.initialized.get();
     }

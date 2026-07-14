@@ -23,7 +23,10 @@ import info.pithos.data.relational.client.ProtoBufAssociationService;
 import info.pithos.data.relational.client.RelationalClient;
 import info.pithos.monetization.model.Monetization;
 import info.pithos.monetization.service.WorkflowFeatureService;
+import info.pithos.monetization.service.WorkflowService;
 import info.pithos.runtime.core.context.AsyncTaskQueue;
+import info.pithos.runtime.core.context.ErrorCode;
+import info.pithos.runtime.core.context.ServiceException;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;
@@ -33,15 +36,18 @@ public class RelationalWorkflowFeatureService
         extends ProtoBufAssociationService<Monetization.WorkflowFeature>
         implements WorkflowFeatureService {
 
+    private final WorkflowService workflowService;
     private final ProtoBufListCache<Monetization.WorkflowFeature> listCache;
     private final AsyncTaskQueue taskQueue;
 
     public RelationalWorkflowFeatureService(RelationalClient relationalClient,
                                              DistributedCacheClient cacheClient,
-                                             AsyncTaskQueue taskQueue) {
+                                             AsyncTaskQueue taskQueue,
+                                             WorkflowService workflowService) {
         super(relationalClient, "workflowFeature",
               Monetization.WorkflowFeature.getDefaultInstance(),
               "workflowId", "featureId");
+        this.workflowService = workflowService;
         this.listCache = ProtoBufListCache.of(cacheClient, Monetization.WorkflowFeature.getDefaultInstance());
         this.taskQueue = taskQueue;
     }
@@ -49,12 +55,19 @@ public class RelationalWorkflowFeatureService
     @Override
     public CompletableFuture<Monetization.WorkflowFeature> add(
             RequestContext rc, String workflowId, String featureId, int stepOrder) {
-        Monetization.WorkflowFeature link = Monetization.WorkflowFeature.newBuilder()
-            .setWorkflowId(workflowId)
-            .setFeatureId(featureId)
-            .setStepOrder(stepOrder)
-            .build();
-        return insert(rc, link)
+        return workflowService.get(rc, workflowId)
+            .thenCompose(opt -> {
+                Monetization.Workflow workflow = opt.orElseThrow(() ->
+                    new ServiceException(ErrorCode.NOT_FOUND, "Workflow not found: " + workflowId));
+                Monetization.WorkflowFeature link = Monetization.WorkflowFeature.newBuilder()
+                    .setAppId(workflow.getAppId())
+                    .setWorkflowId(workflowId)
+                    .setFeatureId(featureId)
+                    .setStepOrder(stepOrder)
+                    .setCreatedByUserId(rc.getAuthContext().getUserId())
+                    .build();
+                return insert(rc, link);
+            })
             .thenCompose(saved -> invalidate(rc, workflowId).thenApply(v -> saved));
     }
 

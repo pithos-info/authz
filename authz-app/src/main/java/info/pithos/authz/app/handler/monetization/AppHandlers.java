@@ -57,6 +57,7 @@ public final class AppHandlers {
                 .setName(req.getName())
                 .setOwnerId(rc.getAuthContext().getUserId())
                 .setVersion(1)
+                .setCreatedByUserId(rc.getAuthContext().getUserId())
                 .build();
             return Uni.createFrom().completionStage(() -> service.create(rc, data))
                 .map(created -> ProtoBufMapper.map(created, App.newBuilder()));

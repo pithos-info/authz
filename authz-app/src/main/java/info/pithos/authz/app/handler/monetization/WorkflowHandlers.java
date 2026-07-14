@@ -96,6 +96,7 @@ public final class WorkflowHandlers {
                 .setJourneyId(req.getJourneyId())
                 .setDepthLevel(req.getDepthLevel())
                 .setVersion(1)
+                .setCreatedByUserId(rc.getAuthContext().getUserId())
                 .build();
             return Uni.createFrom().completionStage(() -> service.create(rc, data))
                 .map(created -> ProtoBufMapper.map(created, Workflow.newBuilder()));

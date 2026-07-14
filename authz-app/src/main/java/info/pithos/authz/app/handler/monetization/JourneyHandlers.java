@@ -60,6 +60,7 @@ public final class JourneyHandlers {
                 .setGoal(req.getGoal())
                 .setOutcomeStatement(req.getOutcomeStatement())
                 .setVersion(1)
+                .setCreatedByUserId(rc.getAuthContext().getUserId())
                 .build();
             return Uni.createFrom().completionStage(() -> service.create(rc, data))
                 .map(created -> ProtoBufMapper.map(created, Journey.newBuilder()));

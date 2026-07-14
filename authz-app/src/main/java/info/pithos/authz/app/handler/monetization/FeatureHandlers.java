@@ -57,6 +57,7 @@ public final class FeatureHandlers {
                 .setName(req.getName())
                 .setRichardsonMaturityLevel(req.getRichardsonMaturityLevel())
                 .setVersion(1)
+                .setCreatedByUserId(rc.getAuthContext().getUserId())
                 .build();
             return Uni.createFrom().completionStage(() -> service.create(rc, data))
                 .map(created -> ProtoBufMapper.map(created, Feature.newBuilder()));
