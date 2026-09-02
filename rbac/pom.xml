@@ -7,13 +7,13 @@
     <parent>
         <groupId>info.pithos.authz</groupId>
         <artifactId>info-pithos-authz</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>info.pithos.rbac</groupId>
     <artifactId>info-pithos-rbac</artifactId>
     <name>Pithos Rbac</name>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>

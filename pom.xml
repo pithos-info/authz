@@ -6,7 +6,7 @@
 
     <groupId>info.pithos.authz</groupId>
     <artifactId>info-pithos-authz</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Pithos Authorization</name>
@@ -54,7 +54,7 @@
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <grpc.version>1.68.1</grpc.version>
 
-        <pithos-runtime.version>1.0.0</pithos-runtime.version>
+        <pithos-runtime.version>1.0.0-SNAPSHOT</pithos-runtime.version>
     </properties>
 
     <dependencyManagement>
