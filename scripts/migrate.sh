@@ -16,8 +16,9 @@ VAULT_ADDR="http://127.0.0.1:8200"
 VAULT_TOKEN="dev-root-token"
 
 RBAC_CHANGELOG_DIR="$AUTHZ_DIR/rbac/rbac-postgres/src/main/resources"
+RBAC_CHANGELOG="db/changelog/postgres/rbac-changelog-master.xml"
 MON_CHANGELOG_DIR="$AUTHZ_DIR/monetization/monetization-postgres/src/main/resources"
-CHANGELOG="db/changelog/postgres/db.changelog-master.xml"
+MON_CHANGELOG="db/changelog/postgres/monetization-changelog-master.xml"
 
 # ---- helpers ----------------------------------------------------------------
 
@@ -48,12 +49,13 @@ ensure_database() {
 run_liquibase() {
     local label="$1"
     local changelog_dir="$2"
+    local changelog_file="$3"
     echo "Running Liquibase migrations ($label)..."
     liquibase \
         --url="jdbc:postgresql://$PG_HOST:$PG_PORT/$PG_DB" \
         --username="$PG_USER" \
         --search-path="$changelog_dir" \
-        --changelog-file="$CHANGELOG" \
+        --changelog-file="$changelog_file" \
         update
     echo "  $label migrations: done"
 }
@@ -78,6 +80,6 @@ seed_vault() {
 
 wait_for_postgres
 ensure_database
-run_liquibase "rbac" "$RBAC_CHANGELOG_DIR"
-run_liquibase "monetization" "$MON_CHANGELOG_DIR"
+run_liquibase "rbac" "$RBAC_CHANGELOG_DIR" "$RBAC_CHANGELOG"
+run_liquibase "monetization" "$MON_CHANGELOG_DIR" "MON_CHANGELOG"
 seed_vault
