@@ -9,5 +9,8 @@
     <include file="db/changelog/postgres/002-system-bootstrap.sql"/>
     <include file="db/changelog/postgres/003-pithos-bootstrap.sql"/>
     <include file="db/changelog/postgres/004-account-schema.sql"/>
+    <include file="db/changelog/postgres/005-agent-bootstrap.sql"/>
+    <include file="db/changelog/postgres/006-system-admin-apikey.sql"/>
+    <include file="db/changelog/postgres/007-kestrel-bootstrap.sql"/>
 
 </databaseChangeLog>

@@ -54,7 +54,10 @@ public final class RbacUserContextResolver implements UserContextResolver {
                     throw new ServiceException(ErrorCode.UNAUTHORIZED,
                         "enterprise not found: " + enterpriseId);
                 }
-                return userService.findByExternalId(rc, externalId);
+                return userService.findByExternalId(rc, externalId)
+                    .thenCompose(opt -> opt.isPresent()
+                        ? CompletableFuture.completedFuture(opt)
+                        : userService.get(rc, externalId));
             })
             .thenApply(userOpt -> {
                 if (userOpt.isEmpty()) {

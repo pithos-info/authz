@@ -1,39 +1,39 @@
 -- liquibase formatted sql
 
--- changeset pithos:rbac-003 labels:rbac failOnError:true
+-- changeset pithos:rbac-007 labels:rbac failOnError:true
 INSERT INTO "enterprise" (id, slug, name, domain, "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('2', 'pithos', 'pithos', 'pithos.info', now(), now());
+VALUES ('3', 'kestrel', 'kestrel', 'kestrel.app', now(), now());
 
 INSERT INTO "group" (id, "enterpriseId", name, "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('61e3a4be-e377-4bd4-b56e-6ad583f881ea', '2', 'admin', now(), now());
+VALUES ('9577fb88-343b-4eeb-b0bf-4cc58db68ae0', '3', 'admin', now(), now());
 
 INSERT INTO "role" (id, "enterpriseId", name, "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('7992fe54-1633-437b-80b7-594805b2ba7d', '2', 'admin', now(), now());
+VALUES ('37dc9460-568b-49cf-86c8-a66a1f2cf365', '3', 'admin', now(), now());
 
 INSERT INTO "role" (id, "enterpriseId", name, "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('40f1960d-9ad3-4aea-af9e-0be5096b849f', '2', 'dev', now(), now());
+VALUES ('1f9a0b2a-fcd0-48fd-9eea-4376251ae8db', '3', 'dev', now(), now());
 
 INSERT INTO "user" (id, "enterpriseId", email, "externalId", "idpProvider", "displayName", "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('bf470037-fef1-4e57-91a1-b35abdda50ee', '2', 'evergetiki', 'pending:evergetiki.agora@gmail.com', 'google', 'evergetiki', now(), now());
+VALUES ('205a3ce0-7026-4bf2-bcaf-3c95af9c005a', '3', 'evergetiki', 'pending:evergetiki.agora@gmail.com', 'google', 'evergetiki', now(), now());
 
 INSERT INTO "userRole" ("enterpriseId", "userId", "roleId", "grantedById", "utcCreatedTimestampMs")
-VALUES ('2', 'bf470037-fef1-4e57-91a1-b35abdda50ee', '7992fe54-1633-437b-80b7-594805b2ba7d', NULL, now());
+VALUES ('3', '205a3ce0-7026-4bf2-bcaf-3c95af9c005a', '37dc9460-568b-49cf-86c8-a66a1f2cf365', NULL, now());
 
 -- Service account for headless / programmatic access
 INSERT INTO "user" (id, "enterpriseId", email, "externalId", "idpProvider", "displayName", "utcCreatedTimestampMs", "utcTimestampMs")
-VALUES ('8198d80e-ca57-4b19-bce6-b79538dfefc0', '2', 'svc-dev@pithos.info', 'service:svc-dev', 'service', 'pithos dev service account', now(), now());
+VALUES ('15eb8c74-4484-410b-a8a3-0cf81fe40912', '3', 'svc-dev@kestrel.app', 'service:svc-dev', 'service', 'kestrel dev service account', now(), now());
 
 INSERT INTO "userRole" ("enterpriseId", "userId", "roleId", "grantedById", "utcCreatedTimestampMs")
-VALUES ('2', '8198d80e-ca57-4b19-bce6-b79538dfefc0', '40f1960d-9ad3-4aea-af9e-0be5096b849f', NULL, now());
+VALUES ('3', '15eb8c74-4484-410b-a8a3-0cf81fe40912', '1f9a0b2a-fcd0-48fd-9eea-4376251ae8db', NULL, now());
 
 INSERT INTO "apiKey" (id, "enterpriseId", "userId", name, "keyHash", "keyPrefix", permissions, "utcCreatedTimestampMs")
 VALUES (
-  '6cedecb5-0430-4409-a8bd-5aa824145735',
-  '2',
-  '8198d80e-ca57-4b19-bce6-b79538dfefc0',
+  'ec3f2eba-074b-4d3c-839b-9e2ac0209e84',
+  '3',
+  '15eb8c74-4484-410b-a8a3-0cf81fe40912',
   'dev-service-key',
-  'a2786676039ab0df1e296cc5db8eb0b3d3bafad9c6543e1db94e8e804c1d588f',
-  'pth_121951eb',
+  '54728c6ba843573640392408ae31ac41f44394156a0080cd6bc11ea828885fa2',
+  'kst_0d97b506',
   '{}',
   now()
 );

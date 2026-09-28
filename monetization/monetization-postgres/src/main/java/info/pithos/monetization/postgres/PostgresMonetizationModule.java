@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class PostgresMonetizationModule extends MonetizationServiceModule {
 
-    private static final String CHANGELOG = "db/changelog/postgres/db.changelog-master.xml";
+    private static final String CHANGELOG = "db/changelog/postgres/monetization-changelog-master.xml";
 
     private PostgresClient   relationalClient;
     private RedisCacheClient cacheClient;
@@ -66,7 +66,7 @@ public final class PostgresMonetizationModule extends MonetizationServiceModule 
     @Override
     public CompletableFuture<Boolean> start(long timeout, TimeUnit unit) {
         return relationalClient.start(timeout, unit)
-            .thenCompose(ok -> relationalClient.withConnection(conn -> {
+            .thenCompose(ok -> relationalClient.withMigration(conn -> {
                 Database db = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(conn));
                 new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)

@@ -1,4 +1,7 @@
 target/
+authz-config.yaml
+/META-INF/
+/info/
 
 # Eclipse
 .classpath

@@ -77,7 +77,7 @@ public final class CloudSqlRbacModule extends RbacServiceModule {
     @Override
     public CompletableFuture<Boolean> start(long timeout, TimeUnit unit) {
         return relationalClient.start(timeout, unit)
-            .thenCompose(ok -> relationalClient.withConnection(conn -> {
+            .thenCompose(ok -> relationalClient.withMigration(conn -> {
                 Database db = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(conn));
                 new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), db)
