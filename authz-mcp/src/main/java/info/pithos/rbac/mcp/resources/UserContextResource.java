@@ -21,7 +21,7 @@ import info.pithos.rbac.GroupService;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.RoleService;
 import info.pithos.rbac.UserService;
-import info.pithos.rbac.mcp.sdk.McpResource;
+import info.pithos.service.container.core.mcp.McpResource;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 

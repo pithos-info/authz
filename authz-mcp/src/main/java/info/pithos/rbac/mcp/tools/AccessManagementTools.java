@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import info.pithos.rbac.GroupMemberService;
 import info.pithos.rbac.GroupService;
 import info.pithos.rbac.UserRoleService;
-import info.pithos.rbac.mcp.sdk.McpTool;
+import info.pithos.service.container.core.mcp.McpTool;
 import info.pithos.rbac.model.Rbac;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 

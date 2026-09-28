@@ -19,7 +19,7 @@ package info.pithos.rbac.mcp.tools;
 import com.google.inject.Inject;
 import info.pithos.rbac.RolePermissionService;
 import info.pithos.rbac.UserRoleService;
-import info.pithos.rbac.mcp.sdk.McpTool;
+import info.pithos.service.container.core.mcp.McpTool;
 import info.pithos.runtime.model.protocol.Context.RequestContext;
 
 import java.util.List;

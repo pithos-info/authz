@@ -17,7 +17,7 @@
 package info.pithos.rbac.mcp;
 
 import com.google.inject.Singleton;
-import info.pithos.rbac.mcp.auth.McpAuthenticator;
+import info.pithos.service.container.core.mcp.McpAuthenticator;
 import info.pithos.rbac.mcp.resources.UserContextResource;
 import info.pithos.rbac.mcp.tools.AccessManagementTools;
 import info.pithos.rbac.mcp.tools.AuthzTools;
