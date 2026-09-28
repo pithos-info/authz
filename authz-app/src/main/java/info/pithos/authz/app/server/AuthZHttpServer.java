@@ -43,7 +43,9 @@ public final class AuthZHttpServer {
     public void start() {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
-        restRouter.mount(router);
+        Router api = Router.router(vertx);
+        restRouter.mount(api);
+        router.mountSubRouter("/rbac/v1", api);
 
         vertx.createHttpServer()
             .requestHandler(router)
